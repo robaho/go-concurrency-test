@@ -1,3 +1,8 @@
+**Update**
+
+Based on feedback from Bryan Mills, I've updated the implementation using channels, and re-tested. I do not believe it has
+made a significant difference. It does highlight that the 'Get' is worse than the 'Put' because 2 channels are involved.
+
 **Summary**
 
 The Go language has significant room for improvement in terms of concurrent data structure performance, with the current implementations being far
@@ -49,24 +54,24 @@ was allocated within the method under test.
 **Go Test Results**
 
 ```
-BenchmarkUnsharedCachePutGet-8    	20000000	       104 ns/op
-BenchmarkUnsharedCachePut-8       	20000000	        77.0 ns/op
-BenchmarkUnsharedCacheGet-8       	20000000	        69.2 ns/op
-BenchmarkLockCachePutGet-8        	10000000	       235 ns/op
+enchmarkUnsharedCachePutGet-8    	20000000	       106 ns/op
+BenchmarkUnsharedCachePut-8       	20000000	        76.3 ns/op
+BenchmarkUnsharedCacheGet-8       	20000000	        70.8 ns/op
+BenchmarkLockCachePutGet-8        	10000000	       239 ns/op
 BenchmarkLockCachePut-8           	10000000	       155 ns/op
-BenchmarkLockCacheGet-8           	10000000	       142 ns/op
-BenchmarkSyncCachePutGet-8        	 5000000	       273 ns/op
-BenchmarkSyncCachePut-8           	10000000	       230 ns/op
-BenchmarkSyncCacheGet-8           	10000000	       146 ns/op
-BenchmarkChannelCachePutGet-8     	 1000000	      1551 ns/op
-BenchmarkChannelCachePut-8        	 2000000	       746 ns/op
-BenchmarkChannelCacheGet-8        	 1000000	      1015 ns/op
-BenchmarkLockCacheMultiPut-8      	 5000000	       378 ns/op
-BenchmarkSyncCacheMultiPut-8      	10000000	       267 ns/op
-BenchmarkChannelCacheMultiPut-8   	 2000000	       957 ns/op
-BenchmarkLockCacheMultiGet-8      	10000000	       196 ns/op
-BenchmarkSyncCacheMultiGet-8      	10000000	       145 ns/op
-BenchmarkChannelCacheMultiGet-8   	 1000000	      1824 ns/op
+BenchmarkLockCacheGet-8           	10000000	       144 ns/op
+BenchmarkSyncCachePutGet-8        	 5000000	       281 ns/op
+BenchmarkSyncCachePut-8           	10000000	       255 ns/op
+BenchmarkSyncCacheGet-8           	10000000	       141 ns/op
+BenchmarkChannelCachePutGet-8     	 1000000	      1278 ns/op
+BenchmarkChannelCachePut-8        	 3000000	       543 ns/op
+BenchmarkChannelCacheGet-8        	 2000000	       861 ns/op
+BenchmarkLockCacheMultiPut-8      	 5000000	       377 ns/op
+BenchmarkSyncCacheMultiPut-8      	 5000000	       267 ns/op
+BenchmarkChannelCacheMultiPut-8   	 2000000	       791 ns/op
+BenchmarkLockCacheMultiGet-8      	10000000	       202 ns/op
+BenchmarkSyncCacheMultiGet-8      	10000000	       142 ns/op
+BenchmarkChannelCacheMultiGet-8   	 1000000	      1464 ns/op
 ```
 
 **Go Analysis**

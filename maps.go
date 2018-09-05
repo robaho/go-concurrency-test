@@ -12,15 +12,15 @@ type LockCache struct {
 	m map[int]int
 }
 
-func NewLockCache() *LockCache{
-	m := LockCache{m:make(map[int]int)}
+func NewLockCache() *LockCache {
+	m := LockCache{m: make(map[int]int)}
 	return &m
 }
 
 func (m *LockCache) Get(key int) int {
 	m.RLock()
 	defer m.RUnlock()
-	val,ok := m.m[key%1000000]
+	val, ok := m.m[key%1000000]
 	if !ok {
 		return 0
 	}
@@ -36,13 +36,13 @@ type UnsharedCache struct {
 	m map[int]int
 }
 
-func NewUnsharedCache() *UnsharedCache{
-	m := UnsharedCache{m:make(map[int]int)}
+func NewUnsharedCache() *UnsharedCache {
+	m := UnsharedCache{m: make(map[int]int)}
 	return &m
 }
 
 func (m *UnsharedCache) Get(key int) int {
-	val,ok := m.m[key%1000000]
+	val, ok := m.m[key%1000000]
 	if !ok {
 		return 0
 	}
@@ -62,8 +62,8 @@ func NewSyncCache() *SyncCache {
 }
 
 func (m *SyncCache) Get(key int) int {
-	val, _ := m.m.Load(key%1000000)
-	if val==nil {
+	val, _ := m.m.Load(key % 1000000)
+	if val == nil {
 		return 0
 	}
 	return val.(int)
@@ -72,37 +72,44 @@ func (m *SyncCache) Put(key int, value int) {
 	m.m.Store(key%1000000, value)
 }
 
-type KeyValue struct {
+type PutRequest struct {
 	key, value int
 }
+type GetRequest struct {
+	key int
+}
+
 type ChannelCache struct {
-	m      map[int]int
-	read   chan int
-	write  chan KeyValue
-	result chan int
+	m        map[int]int
+	request  chan interface{}
+	response chan int
 }
 
 func (m *ChannelCache) Get(key int) int {
-	m.read <- key
-	return <- m.result
+	m.request <- GetRequest{key}
+	return <-m.response
 }
+
 func (m *ChannelCache) Put(key int, value int) {
-	m.write <- KeyValue{key,value}
+	m.request <- PutRequest{key, value}
 }
 
 func NewChannelCache() *ChannelCache {
-	c := &ChannelCache{m:make(map[int]int),read:make(chan int),write:make(chan KeyValue),result:make(chan int)}
+	c := &ChannelCache{m: make(map[int]int), request: make(chan interface{}), response: make(chan int)}
 	go func() {
 		for {
 			select {
-			case key := <- c.read:
-				val,ok := c.m[key%1000000]
-				if !ok {
-					val=0
+			case request := <-c.request:
+				switch request.(type) {
+				case GetRequest:
+					val, ok := c.m[request.(GetRequest).key%1000000]
+					if !ok {
+						val = 0
+					}
+					c.response <- val
+				case PutRequest:
+					c.m[request.(PutRequest).key%1000000] = request.(PutRequest).value
 				}
-				c.result <- val
-			case request:= <- c.write:
-				c.m[request.key]=request.value
 			}
 		}
 	}()
