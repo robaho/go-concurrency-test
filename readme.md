@@ -13,6 +13,8 @@ but here is the [incident](https://golang.org/issue/17973)
 
 I removed the use of defer in the lock implementation as it is a known? performance issue.
 
+I updated the testing methodology to make certain constraints on the test more clear.
+
 **Summary**
 
 The Go language has significant room for improvement in terms of concurrent data structure performance, with the current implementations being far
@@ -49,6 +51,10 @@ The software versions are Go 1.11, and Java 1.8_181.
 **Testing Methodology**
 
 The cache uses ints for keys and values, and the cache is limited to 1 million entries to avoid possible 'map' degradation.
+The map is also pre-populated with the 1 million entries, and used for all of the tests, to ensure the tests do not measure map resizing costs, and
+other start-up penalties. The expected cache size in memory is roughly 1 million * sizeof(int), but larger when pointers are used by the implementation,
+especially in the case of Java. No tests were performed to measure the actual memory usage.
+
 There are 3 operations tested Get, Put, and PutGet. They are tested in a uncontested scenario using 1 go routine, they are also tested
 in a contested scenario (multi) using 2 go routines. The contested was limited to 2, since the machine only has 4 true cores, and there is 
 housekeeper work performed by the benchmark harness, OS, etc. so this seemed fair.
@@ -60,6 +66,8 @@ for what would be expected of the Go solution, since in my experience in many ca
 
 The caches are essentially 'static' structures. I did this for fairness. In testing there was no appreciable difference when the the cache structure
 was allocated within the method under test. 
+
+Any GC related activity is included in the tests. No attempt was made to reduce, or tune the GC activity on any platform.
 
 **Go Test Results**
 
