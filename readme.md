@@ -11,6 +11,8 @@ He also provided that sync.Map has performance issues, see
 He also provided that the RWMutex has scalability issues (but I am not sure that applies here since only 2 routines are tested),
 but here is the [incident](https://golang.org/issue/17973)
 
+I removed the use of defer in the lock implementation as it is a known? performance issue.
+
 **Summary**
 
 The Go language has significant room for improvement in terms of concurrent data structure performance, with the current implementations being far
