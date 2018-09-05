@@ -43,6 +43,9 @@ The tests for both Go and Java were executed via Intellij, as it has support for
 The testing harnesses do not operate identically, but I attempted to make the comparisons as fair as possible, mainly to use Java as a baseline
 for what would be expected of the Go solution, since in my experience in many cases the Go code seems to outperform the equivalent Java code.
 
+The caches are essentially 'static' structures. I did this for fairness. In testing there was no appreciable difference when the the cache structure
+was allocated within the method under test. 
+
 **Go Test Results**
 
 ```
