@@ -108,7 +108,8 @@ TestJavaCache.Test5MultiGet     avgt    3  14.250 ±  10.035  ns/op
 1. There warm-up phase matters little in tests like this, since so many iterations are required.
 1. The Java test results are across the board far superior to the equivalent Go operations, almost 10x faster in the best case, and 2x in the worst.
 2. The Java 'multi get' is in line with the 'get', since it should be a lock-free volatile read.
-3. The results shows that Java's dynamic inlining can achieve amazing performance. 
+3. The results shows that Java's dynamic inlining can achieve amazing performance.
+4. The Java boxing of primitives into objects (required by CHM), seems very efficient. 
 
 **Overall Findings**
 
