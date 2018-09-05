@@ -3,6 +3,14 @@
 Based on feedback from Bryan Mills, I've updated the implementation using channels, and re-tested. I do not believe it has
 made a significant difference. It does highlight that the 'Get' is worse than the 'Put' because 2 channels are involved.
 
+He has written [Rethinking Classical Concurrency in Go](https://golang.org/wiki/Go-Community-Slides#rethinking-classical-concurrency-patterns)
+
+He also provided that sync.Map has performance issues, see
+[this search](https://github.com/golang/go/issues?utf8=✓&q=is%3Aissue+is%3Aopen+%22sync%3A%22+Map+in%3Atitle+label%3APerformance)
+
+He also provided that the RWMutex has scalability issues (but I am not sure that applies here since only 2 routines are tested),
+but here is the [incident](https://golang.org/issue/17973)
+
 **Summary**
 
 The Go language has significant room for improvement in terms of concurrent data structure performance, with the current implementations being far
