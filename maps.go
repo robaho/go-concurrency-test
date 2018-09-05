@@ -2,6 +2,8 @@ package go_concurrency
 
 import "sync"
 
+const MaxMapSize = 500000
+
 type Cache interface {
 	Get(key int) int
 	Put(key int, value int)
@@ -19,7 +21,7 @@ func NewLockCache() *LockCache {
 
 func (m *LockCache) Get(key int) int {
 	m.RLock()
-	val, ok := m.m[key%1000000]
+	val, ok := m.m[key%MaxMapSize]
 	m.RUnlock() // non-idiomatic go, but avoid defer performance hit
 	if !ok {
 		return 0
@@ -28,7 +30,7 @@ func (m *LockCache) Get(key int) int {
 }
 func (m *LockCache) Put(key int, value int) {
 	m.Lock()
-	m.m[key%1000000] = value
+	m.m[key%MaxMapSize] = value
 	m.Unlock() // non-idiomatic go, but avoid defer performance hit
 }
 
@@ -42,14 +44,14 @@ func NewUnsharedCache() *UnsharedCache {
 }
 
 func (m *UnsharedCache) Get(key int) int {
-	val, ok := m.m[key%1000000]
+	val, ok := m.m[key%MaxMapSize]
 	if !ok {
 		return 0
 	}
 	return val
 }
 func (m *UnsharedCache) Put(key int, value int) {
-	m.m[key%1000000] = value
+	m.m[key%MaxMapSize] = value
 }
 
 type SyncCache struct {
@@ -62,14 +64,14 @@ func NewSyncCache() *SyncCache {
 }
 
 func (m *SyncCache) Get(key int) int {
-	val, _ := m.m.Load(key % 1000000)
+	val, _ := m.m.Load(key % MaxMapSize)
 	if val == nil {
 		return 0
 	}
 	return val.(int)
 }
 func (m *SyncCache) Put(key int, value int) {
-	m.m.Store(key%1000000, value)
+	m.m.Store(key%MaxMapSize, value)
 }
 
 type PutRequest struct {
@@ -102,13 +104,13 @@ func NewChannelCache() *ChannelCache {
 			case request := <-c.request:
 				switch request.(type) {
 				case GetRequest:
-					val, ok := c.m[request.(GetRequest).key%1000000]
+					val, ok := c.m[request.(GetRequest).key%MaxMapSize]
 					if !ok {
 						val = 0
 					}
 					c.response <- val
 				case PutRequest:
-					c.m[request.(PutRequest).key%1000000] = request.(PutRequest).value
+					c.m[request.(PutRequest).key%MaxMapSize] = request.(PutRequest).value
 				}
 			}
 		}
