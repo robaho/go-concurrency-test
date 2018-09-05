@@ -115,3 +115,29 @@ func NewChannelCache() *ChannelCache {
 	}()
 	return c
 }
+
+type ConcurrentMapCache struct {
+	m *ConcurrentMap
+}
+
+func NewConcurrentCache() *ConcurrentMapCache {
+	m := ConcurrentMapCache{m: NewConcurrentMap()}
+	return &m
+}
+
+type Int int
+
+func (i Int) Hash() int {
+	return int(i)
+}
+
+func (m *ConcurrentMapCache) Get(key int) int {
+	val, ok := m.m.Get(Int(key))
+	if !ok {
+		return 0
+	}
+	return val.(int)
+}
+func (m *ConcurrentMapCache) Put(key int, value int) {
+	m.m.Put(Int(key), value)
+}
