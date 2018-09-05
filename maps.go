@@ -19,8 +19,8 @@ func NewLockCache() *LockCache {
 
 func (m *LockCache) Get(key int) int {
 	m.RLock()
-	defer m.RUnlock()
 	val, ok := m.m[key%1000000]
+	m.RUnlock() // non-idiomatic go, but avoid defer performance hit
 	if !ok {
 		return 0
 	}
@@ -28,8 +28,8 @@ func (m *LockCache) Get(key int) int {
 }
 func (m *LockCache) Put(key int, value int) {
 	m.Lock()
-	defer m.Unlock()
 	m.m[key%1000000] = value
+	m.Unlock() // non-idiomatic go, but avoid defer performance hit
 }
 
 type UnsharedCache struct {
