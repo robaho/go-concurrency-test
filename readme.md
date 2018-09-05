@@ -1,7 +1,7 @@
 **Summary**
 
 The Go language has significant room for improvement in terms of concurrent data structure performance, with the current implementations being far
-slower than the equivalent Java ones. This is no way it to claim that Java is superior to Go, as there are other features of Go
+slower than the equivalent Java ones. This is no way to claim that Java is superior to Go, as there are other features of Go
 (low GC pauses, lower memory footprint, no warm-up time, etc.) that make it a superior choice for many applications.
 
 **Background**
