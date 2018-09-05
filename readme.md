@@ -13,6 +13,9 @@ but here is the [incident](https://golang.org/issue/17973)
 
 I removed the use of defer in the lock implementation as it is a known? performance issue.
 
+I reduced the number of elements cached to be 500k which should allow the cache to fit entirely in the L3 on the testing machine.
+It made some improvement.
+
 I updated the testing methodology to make certain constraints on the test more clear.
 
 **Summary**
