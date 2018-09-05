@@ -72,23 +72,23 @@ Any GC related activity is included in the tests. No attempt was made to reduce,
 **Go Test Results**
 
 ```
-BenchmarkUnsharedCachePutGet-8    	20000000	       109 ns/op
-BenchmarkUnsharedCachePut-8       	20000000	        77.1 ns/op
-BenchmarkUnsharedCacheGet-8       	20000000	        71.4 ns/op
-BenchmarkLockCachePutGet-8        	10000000	       151 ns/op
-BenchmarkLockCachePut-8           	10000000	       123 ns/op
-BenchmarkLockCacheGet-8           	20000000	       106 ns/op
-BenchmarkSyncCachePutGet-8        	 5000000	       278 ns/op
-BenchmarkSyncCachePut-8           	10000000	       259 ns/op
-BenchmarkSyncCacheGet-8           	10000000	       165 ns/op
-BenchmarkChannelCachePutGet-8     	 1000000	      1276 ns/op
-BenchmarkChannelCachePut-8        	 3000000	       626 ns/op
-BenchmarkChannelCacheGet-8        	 2000000	       993 ns/op
-BenchmarkLockCacheMultiPut-8      	 5000000	       342 ns/op
-BenchmarkSyncCacheMultiPut-8      	 5000000	       265 ns/op
+BenchmarkUnsharedCachePutGet-8    	20000000	        92.5 ns/op
+BenchmarkUnsharedCachePut-8       	20000000	        68.5 ns/op
+BenchmarkUnsharedCacheGet-8       	20000000	        63.1 ns/op
+BenchmarkLockCachePutGet-8        	10000000	       142 ns/op
+BenchmarkLockCachePut-8           	20000000	       109 ns/op
+BenchmarkLockCacheGet-8           	20000000	        94.0 ns/op
+BenchmarkSyncCachePutGet-8        	 5000000	       280 ns/op
+BenchmarkSyncCachePut-8           	10000000	       239 ns/op
+BenchmarkSyncCacheGet-8           	10000000	       154 ns/op
+BenchmarkChannelCachePutGet-8     	 1000000	      1294 ns/op
+BenchmarkChannelCachePut-8        	 3000000	       570 ns/op
+BenchmarkChannelCacheGet-8        	 2000000	       915 ns/op
+BenchmarkLockCacheMultiPut-8      	 5000000	       276 ns/op
+BenchmarkSyncCacheMultiPut-8      	10000000	       271 ns/op
 BenchmarkChannelCacheMultiPut-8   	 2000000	       845 ns/op
-BenchmarkLockCacheMultiGet-8      	10000000	       169 ns/op
-BenchmarkSyncCacheMultiGet-8      	10000000	       174 ns/op
+BenchmarkLockCacheMultiGet-8      	10000000	       141 ns/op
+BenchmarkSyncCacheMultiGet-8      	10000000	       178 ns/op
 BenchmarkChannelCacheMultiGet-8   	 1000000	      1449 ns/op
 ```
 
@@ -111,22 +111,23 @@ probably necessitate using pointers.
 
 ```
 Benchmark                       Mode  Cnt   Score    Error  Units
-TestJavaCache.Test0PutGet       avgt    3  48.399 ± 34.480  ns/op
-TestJavaCache.Test1Put          avgt    3  38.739 ± 10.777  ns/op
-TestJavaCache.Test2Get          avgt    3  14.644 ±  3.646  ns/op
-TestJavaCache.Test3MultiPutGet  avgt    3  61.338 ±  7.863  ns/op
-TestJavaCache.Test4MultiPut     avgt    3  54.111 ± 14.804  ns/op
-TestJavaCache.Test5MultiGet     avgt    3  14.492 ±  2.259  ns/op
+TestJavaCache.Test0PutGet       avgt    3  45.539 ±  8.437  ns/op
+TestJavaCache.Test1Put          avgt    3  38.716 ±  7.160  ns/op
+TestJavaCache.Test2Get          avgt    3  13.300 ±  1.295  ns/op
+TestJavaCache.Test3MultiPutGet  avgt    3  56.744 ± 63.184  ns/op
+TestJavaCache.Test4MultiPut     avgt    3  47.960 ± 18.173  ns/op
+TestJavaCache.Test5MultiGet     avgt    3  13.400 ±  1.854  ns/op
 
 without warm-up
 
-Benchmark                       Mode  Cnt   Score     Error  Units
-TestJavaCache.Test0PutGet       avgt    3  59.749 ± 177.602  ns/op
-TestJavaCache.Test1Put          avgt    3  43.815 ± 158.429  ns/op
-TestJavaCache.Test2Get          avgt    3  14.870 ±  20.748  ns/op
-TestJavaCache.Test3MultiPutGet  avgt    3  59.981 ±  46.285  ns/op
-TestJavaCache.Test4MultiPut     avgt    3  53.712 ±  16.179  ns/op
-TestJavaCache.Test5MultiGet     avgt    3  14.250 ±  10.035  ns/op
+enchmark                       Mode  Cnt   Score     Error  Units
+TestJavaCache.Test0PutGet       avgt    3  61.374 ± 218.756  ns/op
+TestJavaCache.Test1Put          avgt    3  48.529 ± 280.177  ns/op
+TestJavaCache.Test2Get          avgt    3  14.589 ±  34.975  ns/op
+TestJavaCache.Test3MultiPutGet  avgt    3  56.957 ±  58.609  ns/op
+TestJavaCache.Test4MultiPut     avgt    3  50.768 ±  19.144  ns/op
+TestJavaCache.Test5MultiGet     avgt    3  13.815 ±   8.804  ns/op
+
 ```
 
 **Java Analysis**

@@ -10,23 +10,23 @@ interface AnyCache {
 }
 
 class MyConcurrentCache implements AnyCache {
+    static final int MaxMapSize = 500000;
+
     ConcurrentHashMap<Integer,Integer> m = new ConcurrentHashMap();
     @Override
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     public int get(int key) {
-        return m.get(key%1000000);
+        return m.get(key%MaxMapSize);
     }
 
     @Override
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     public void put(int key,int value) {
-        m.put(key%1000000,value);
+        m.put(key%MaxMapSize,value%MaxMapSize);
     }
 }
 
 @State(Scope.Benchmark)
 @Fork(0)
-@Warmup(iterations = 0)
+@Warmup(iterations = 1)
 @Measurement(iterations = 3, time = 1)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -40,16 +40,16 @@ public class TestJavaCache {
     @Setup
     public void setup() {
         e = Executors.newFixedThreadPool(2);
-        for(int i=0;i<1000000;i++){
+        for(int i=0;i<MyConcurrentCache.MaxMapSize;i++){
             m.put(i,i);
         }
     }
     @TearDown
     public void tearDown() {
         e.shutdown();
-        for(int i=0;i<1000000;i++){
+        for(int i=0;i<MyConcurrentCache.MaxMapSize;i++){
             if (m.get(i)!=i) {
-                throw new IllegalStateException();
+                throw new IllegalStateException("index "+i+" = "+m.get(i));
             }
         }
     }
