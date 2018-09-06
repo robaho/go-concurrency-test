@@ -26,7 +26,7 @@ class MyConcurrentCache implements AnyCache {
 
 @State(Scope.Benchmark)
 @Fork(0)
-@Warmup(iterations = 1)
+@Warmup(iterations = 0)
 @Measurement(iterations = 3, time = 1)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -61,7 +61,7 @@ public class TestJavaCache {
         int sum=0;
         for(int i=0;i<1000000;i++) {
             m.put(i,i);
-            sum+=m.get(i);
+            sum+=m.get(1000000-i);
         }
         if(sum<0){
             System.out.println("error");
@@ -95,7 +95,7 @@ public class TestJavaCache {
         Runnable r = () -> {
             for(int i=0;i<1000000;i++) {
                 m.put(i,i);
-                if(m.get(i)<0){
+                if(m.get(1000000-i)<0){
                     System.out.println("error");
                 }
             }

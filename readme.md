@@ -18,6 +18,9 @@ It made some improvement.
 
 I updated the testing methodology to make certain constraints on the test more clear.
 
+I determined that the PutGet not matching the Put + Get times was because of cache locality, so PutGet was changed to read from
+opposite sides, which corrected the problem, and so I removed the comment regarding potential 'go bench' accuracy issues.
+
 **Summary**
 
 The Go language has significant room for improvement in terms of concurrent data structure performance, with the current implementations being far
@@ -75,24 +78,24 @@ Any GC related activity is included in the tests. No attempt was made to reduce,
 **Go Test Results**
 
 ```
-BenchmarkUnsharedCachePutGet-8    	20000000	        92.5 ns/op
-BenchmarkUnsharedCachePut-8       	20000000	        68.5 ns/op
-BenchmarkUnsharedCacheGet-8       	20000000	        63.1 ns/op
-BenchmarkLockCachePutGet-8        	10000000	       142 ns/op
-BenchmarkLockCachePut-8           	20000000	       109 ns/op
-BenchmarkLockCacheGet-8           	20000000	        94.0 ns/op
-BenchmarkSyncCachePutGet-8        	 5000000	       280 ns/op
-BenchmarkSyncCachePut-8           	10000000	       239 ns/op
-BenchmarkSyncCacheGet-8           	10000000	       154 ns/op
-BenchmarkChannelCachePutGet-8     	 1000000	      1294 ns/op
-BenchmarkChannelCachePut-8        	 3000000	       570 ns/op
-BenchmarkChannelCacheGet-8        	 2000000	       915 ns/op
-BenchmarkLockCacheMultiPut-8      	 5000000	       276 ns/op
-BenchmarkSyncCacheMultiPut-8      	10000000	       271 ns/op
-BenchmarkChannelCacheMultiPut-8   	 2000000	       845 ns/op
-BenchmarkLockCacheMultiGet-8      	10000000	       141 ns/op
-BenchmarkSyncCacheMultiGet-8      	10000000	       178 ns/op
-BenchmarkChannelCacheMultiGet-8   	 1000000	      1449 ns/op
+BenchmarkUnsharedCachePutGet-8    	10000000	       143 ns/op
+BenchmarkUnsharedCachePut-8       	20000000	        78.8 ns/op
+BenchmarkUnsharedCacheGet-8       	20000000	        73.6 ns/op
+BenchmarkLockCachePutGet-8        	10000000	       231 ns/op
+BenchmarkLockCachePut-8           	10000000	       128 ns/op
+BenchmarkLockCacheGet-8           	20000000	       108 ns/op
+BenchmarkSyncCachePutGet-8        	 3000000	       453 ns/op
+BenchmarkSyncCachePut-8           	 5000000	       260 ns/op
+BenchmarkSyncCacheGet-8           	10000000	       157 ns/op
+BenchmarkChannelCachePutGet-8     	 1000000	      1427 ns/op
+BenchmarkChannelCachePut-8        	 3000000	       554 ns/op
+BenchmarkChannelCacheGet-8        	 2000000	       907 ns/op
+BenchmarkLockCacheMultiPut-8      	 5000000	       357 ns/op
+BenchmarkSyncCacheMultiPut-8      	 5000000	       298 ns/op
+BenchmarkChannelCacheMultiPut-8   	 2000000	       984 ns/op
+BenchmarkLockCacheMultiGet-8      	10000000	       153 ns/op
+BenchmarkSyncCacheMultiGet-8      	10000000	       157 ns/op
+BenchmarkChannelCacheMultiGet-8   	 1000000	      1508 ns/op
 ```
 
 **Go Analysis**
@@ -100,9 +103,7 @@ BenchmarkChannelCacheMultiGet-8   	 1000000	      1449 ns/op
 There are several interesting, and disconcerting aspects.
 
 1. The relative low performance of the unshared cache is disappointing, 
-as this should be no more that a single indirection and a load or store. But when compared to the PutGet,
-which does the same amount of combined work, it performs nearly 50% better, so it would seem that the testing overhead may be skewing these results,
-which may be a sign that 'go bench' is not suitable for these types of tests.
+as this should be no more that a single indirection and a load or store. 
 2. The sync.Map performs no better than the map using locks, even for Get. Ordinarliy, this would be a sign that sync.Map was implemented using
 locks, but this is not the case. There is a lock-free component, but it doesn't appear to perform as it should.
 3. Continuing on #3, the 'multi' using sync performs only marginally better than the lock version. Again, this should only be a volatile load, with the
@@ -114,22 +115,23 @@ probably necessitate using pointers.
 
 ```
 Benchmark                       Mode  Cnt   Score    Error  Units
-TestJavaCache.Test0PutGet       avgt    3  45.539 ±  8.437  ns/op
-TestJavaCache.Test1Put          avgt    3  38.716 ±  7.160  ns/op
-TestJavaCache.Test2Get          avgt    3  13.300 ±  1.295  ns/op
-TestJavaCache.Test3MultiPutGet  avgt    3  56.744 ± 63.184  ns/op
-TestJavaCache.Test4MultiPut     avgt    3  47.960 ± 18.173  ns/op
-TestJavaCache.Test5MultiGet     avgt    3  13.400 ±  1.854  ns/op
+TestJavaCache.Test0PutGet       avgt    3  62.720 ± 37.515  ns/op
+TestJavaCache.Test1Put          avgt    3  43.883 ± 24.987  ns/op
+TestJavaCache.Test2Get          avgt    3  14.854 ±  3.655  ns/op
+TestJavaCache.Test3MultiPutGet  avgt    3  78.970 ± 14.730  ns/op
+TestJavaCache.Test4MultiPut     avgt    3  52.705 ± 21.294  ns/op
+TestJavaCache.Test5MultiGet     avgt    3  16.038 ±  6.033  ns/op
+
 
 without warm-up
 
-enchmark                       Mode  Cnt   Score     Error  Units
-TestJavaCache.Test0PutGet       avgt    3  61.374 ± 218.756  ns/op
-TestJavaCache.Test1Put          avgt    3  48.529 ± 280.177  ns/op
-TestJavaCache.Test2Get          avgt    3  14.589 ±  34.975  ns/op
-TestJavaCache.Test3MultiPutGet  avgt    3  56.957 ±  58.609  ns/op
-TestJavaCache.Test4MultiPut     avgt    3  50.768 ±  19.144  ns/op
-TestJavaCache.Test5MultiGet     avgt    3  13.815 ±   8.804  ns/op
+Benchmark                       Mode  Cnt   Score     Error  Units
+TestJavaCache.Test0PutGet       avgt    3  87.939 ± 210.826  ns/op
+TestJavaCache.Test1Put          avgt    3  50.545 ± 230.259  ns/op
+TestJavaCache.Test2Get          avgt    3  16.661 ±  57.408  ns/op
+TestJavaCache.Test3MultiPutGet  avgt    3  79.629 ±  34.733  ns/op
+TestJavaCache.Test4MultiPut     avgt    3  54.272 ±  16.588  ns/op
+TestJavaCache.Test5MultiGet     avgt    3  15.392 ±   2.863  ns/op
 
 ```
 
