@@ -21,11 +21,8 @@ func NewLockCache() *LockCache {
 
 func (m *LockCache) Get(key int) int {
 	m.RLock()
-	val, ok := m.m[key%MaxMapSize]
+	val, _ := m.m[key%MaxMapSize]
 	m.RUnlock() // non-idiomatic go, but avoid defer performance hit
-	if !ok {
-		return 0
-	}
 	return val
 }
 func (m *LockCache) Put(key int, value int) {
@@ -34,24 +31,19 @@ func (m *LockCache) Put(key int, value int) {
 	m.Unlock() // non-idiomatic go, but avoid defer performance hit
 }
 
-type UnsharedCache struct {
-	m map[int]int
-}
+type UnsharedCache map[int]int
 
 func NewUnsharedCache() *UnsharedCache {
-	m := UnsharedCache{m: make(map[int]int)}
+	m := UnsharedCache{}
 	return &m
 }
 
 func (m *UnsharedCache) Get(key int) int {
-	val, ok := m.m[key%MaxMapSize]
-	if !ok {
-		return 0
-	}
+	val := (*m)[key%MaxMapSize]
 	return val
 }
 func (m *UnsharedCache) Put(key int, value int) {
-	m.m[key%MaxMapSize] = value
+	(*m)[key%MaxMapSize] = value
 }
 
 type SyncCache struct {

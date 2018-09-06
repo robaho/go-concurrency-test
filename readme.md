@@ -78,24 +78,24 @@ Any GC related activity is included in the tests. No attempt was made to reduce,
 **Go Test Results**
 
 ```
-BenchmarkUnsharedCachePutGet-8    	10000000	       143 ns/op
-BenchmarkUnsharedCachePut-8       	20000000	        78.8 ns/op
-BenchmarkUnsharedCacheGet-8       	20000000	        73.6 ns/op
-BenchmarkLockCachePutGet-8        	10000000	       231 ns/op
-BenchmarkLockCachePut-8           	10000000	       128 ns/op
-BenchmarkLockCacheGet-8           	20000000	       108 ns/op
-BenchmarkSyncCachePutGet-8        	 3000000	       453 ns/op
-BenchmarkSyncCachePut-8           	 5000000	       260 ns/op
-BenchmarkSyncCacheGet-8           	10000000	       157 ns/op
-BenchmarkChannelCachePutGet-8     	 1000000	      1427 ns/op
-BenchmarkChannelCachePut-8        	 3000000	       554 ns/op
-BenchmarkChannelCacheGet-8        	 2000000	       907 ns/op
-BenchmarkLockCacheMultiPut-8      	 5000000	       357 ns/op
-BenchmarkSyncCacheMultiPut-8      	 5000000	       298 ns/op
-BenchmarkChannelCacheMultiPut-8   	 2000000	       984 ns/op
-BenchmarkLockCacheMultiGet-8      	10000000	       153 ns/op
-BenchmarkSyncCacheMultiGet-8      	10000000	       157 ns/op
-BenchmarkChannelCacheMultiGet-8   	 1000000	      1508 ns/op
+BenchmarkUnsharedCachePutGet-8    	10000000	       121 ns/op
+BenchmarkUnsharedCachePut-8       	20000000	        66.4 ns/op
+BenchmarkUnsharedCacheGet-8       	20000000	        62.5 ns/op
+BenchmarkLockCachePutGet-8        	10000000	       196 ns/op
+BenchmarkLockCachePut-8           	20000000	       112 ns/op
+BenchmarkLockCacheGet-8           	20000000	        92.6 ns/op
+BenchmarkSyncCachePutGet-8        	 3000000	       439 ns/op
+BenchmarkSyncCachePut-8           	 5000000	       265 ns/op
+BenchmarkSyncCacheGet-8           	10000000	       159 ns/op
+BenchmarkChannelCachePutGet-8     	 1000000	      1389 ns/op
+BenchmarkChannelCachePut-8        	 3000000	       541 ns/op
+BenchmarkChannelCacheGet-8        	 2000000	       887 ns/op
+BenchmarkLockCacheMultiPut-8      	 5000000	       266 ns/op
+BenchmarkSyncCacheMultiPut-8      	 5000000	       279 ns/op
+BenchmarkChannelCacheMultiPut-8   	 2000000	       809 ns/op
+BenchmarkLockCacheMultiGet-8      	10000000	       140 ns/op
+BenchmarkSyncCacheMultiGet-8      	10000000	       177 ns/op
+BenchmarkChannelCacheMultiGet-8   	 1000000	      1429 ns/op
 ```
 
 **Go Analysis**
