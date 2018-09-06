@@ -100,7 +100,7 @@ func NewChannelCache() *ChannelCache {
 	c := &ChannelCache{m: make(map[int]int), request: make(chan interface{}), response: make(chan int)}
 	go func() {
 		for {
-			request := <-c.request:
+			request := <-c.request
 			switch request.(type) {
 			case GetRequest:
 				val, ok := c.m[request.(GetRequest).key%MaxMapSize]
