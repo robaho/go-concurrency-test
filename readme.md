@@ -21,6 +21,8 @@ I updated the testing methodology to make certain constraints on the test more c
 I determined that the PutGet not matching the Put + Get times was because of cache locality, so PutGet was changed to read from
 opposite sides, which corrected the problem, and so I removed the comment regarding potential 'go bench' accuracy issues.
 
+I added an 'unshared' cache to the Java tests for an additional baseline. 
+
 **Summary**
 
 The Go language has significant room for improvement in terms of concurrent data structure performance, with the current implementations being far
@@ -114,26 +116,25 @@ probably necessitate using pointers.
 **Java Test Results**
 
 ```
-Benchmark                       Mode  Cnt   Score    Error  Units
-TestJavaCache.Test0PutGet       avgt    3  62.720 ± 37.515  ns/op
-TestJavaCache.Test1Put          avgt    3  43.883 ± 24.987  ns/op
-TestJavaCache.Test2Get          avgt    3  14.854 ±  3.655  ns/op
-TestJavaCache.Test3MultiPutGet  avgt    3  78.970 ± 14.730  ns/op
-TestJavaCache.Test4MultiPut     avgt    3  52.705 ± 21.294  ns/op
-TestJavaCache.Test5MultiGet     avgt    3  16.038 ±  6.033  ns/op
+using 1 warm-up iteration, and 3 iterations of 1 sec
 
-
-without warm-up
-
-Benchmark                       Mode  Cnt   Score     Error  Units
-TestJavaCache.Test0PutGet       avgt    3  87.939 ± 210.826  ns/op
-TestJavaCache.Test1Put          avgt    3  50.545 ± 230.259  ns/op
-TestJavaCache.Test2Get          avgt    3  16.661 ±  57.408  ns/op
-TestJavaCache.Test3MultiPutGet  avgt    3  79.629 ±  34.733  ns/op
-TestJavaCache.Test4MultiPut     avgt    3  54.272 ±  16.588  ns/op
-TestJavaCache.Test5MultiGet     avgt    3  15.392 ±   2.863  ns/op
+Benchmark                            (arg)  Mode  Cnt   Score    Error  Units
+TestJavaCache.Test0PutGet         unshared  avgt    3  36.375 ±  7.426  ns/op
+TestJavaCache.Test0PutGet       concurrent  avgt    3  48.144 ±  6.811  ns/op
+TestJavaCache.Test1Put            unshared  avgt    3  27.740 ±  6.255  ns/op
+TestJavaCache.Test1Put          concurrent  avgt    3  33.531 ±  7.990  ns/op
+TestJavaCache.Test2Get            unshared  avgt    3  14.736 ±  7.691  ns/op
+TestJavaCache.Test2Get          concurrent  avgt    3  15.844 ±  4.401  ns/op
+TestJavaCache.Test3MultiPutGet    unshared  avgt    3  50.509 ± 24.125  ns/op
+TestJavaCache.Test3MultiPutGet  concurrent  avgt    3  85.440 ± 28.356  ns/op
+TestJavaCache.Test4MultiPut       unshared  avgt    3  41.901 ±  0.181  ns/op
+TestJavaCache.Test4MultiPut     concurrent  avgt    3  51.607 ±  6.243  ns/op
+TestJavaCache.Test5MultiGet       unshared  avgt    3  12.421 ±  2.952  ns/op
+TestJavaCache.Test5MultiGet     concurrent  avgt    3  16.409 ±  6.469  ns/op
 
 ```
+*** The Java multi-unshared are not valid, but no easy way to exclude with jmh. It doesn't crash because the maps are
+pre-populated and don't resize.
 
 **Java Analysis**
 
@@ -145,10 +146,10 @@ TestJavaCache.Test5MultiGet     avgt    3  15.392 ±   2.863  ns/op
 
 **Overall Findings**
 
-Barring bugs in the Go benchmark harness, the Java performance numbers show that there is a lot of room for improvement in the available Go
+The Go performance numbers as compared to Java show that there is a lot of room for improvement in the available Go
 structures for concurrent applications. The Go "use channels" is only suitable when the handling performs a significant amount of work, and/or
-simplicity of code (as it is single-threaded, and the use of locks has otehr issues). The sync.Map should be nearly identically to the 'unshared map'
-for reads, but it is 2x slower - this is a indicator of a poor implementation, or that the underlying native operations used (CAS, etc.) need to be
-examined. 
+simplicity of code (as it is single-threaded, and the use of locks has other issues). The sync.Map should be nearly identically to the 'unshared map'
+for reads (as it is for Java, especially the Get vs. MultiGet), but it is 2x slower - this is a indicator of a poor implementation, poor compiler optimizations,
+or that the underlying native operations used (CAS, etc.) need to be examined. 
 
 _My experience with Go is ongoing, and there is a chance I've made some errors in these tests, and I welcome the community input to improve them._

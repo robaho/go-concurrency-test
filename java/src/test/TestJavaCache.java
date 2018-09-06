@@ -2,15 +2,17 @@ package test;
 
 import org.openjdk.jmh.annotations.*;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.*;
 
 interface AnyCache {
+    int MaxMapSize = 500000;
     int get(int key);
     void put(int key,int value);
 }
 
 class MyConcurrentCache implements AnyCache {
-    static final int MaxMapSize = 500000;
 
     ConcurrentHashMap<Integer,Integer> m = new ConcurrentHashMap();
     @Override
@@ -24,21 +26,49 @@ class MyConcurrentCache implements AnyCache {
     }
 }
 
+/*
+note, this would crash in a real "multi" environment, but only works here since
+the map is pre-populated so it is never resized. There is no easy way in jmh to restrict
+certain benchmarks to certain parameters
+ */
+class MyUnsharedCache implements AnyCache {
+
+    Map<Integer,Integer> m = new HashMap();
+    @Override
+    public int get(int key) {
+        return m.get(key%MaxMapSize);
+    }
+
+    @Override
+    public void put(int key,int value) {
+        m.put(key%MaxMapSize,value%MaxMapSize);
+    }
+}
+
+
 @State(Scope.Benchmark)
 @Fork(0)
-@Warmup(iterations = 0)
+@Warmup(iterations = 1)
 @Measurement(iterations = 3, time = 1)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 
 public class TestJavaCache {
+    @Param({"unshared", "concurrent"})
+    public String arg;
 
-    static AnyCache m = new MyConcurrentCache();
+    static AnyCache m;
 
     static ExecutorService e;
 
     @Setup
     public void setup() {
+        if(arg.equals("unshared")) {
+            m = new MyUnsharedCache();
+        } else {
+            m = new MyConcurrentCache();
+        }
+
         e = Executors.newFixedThreadPool(2);
         for(int i=0;i<MyConcurrentCache.MaxMapSize;i++){
             m.put(i,i);
