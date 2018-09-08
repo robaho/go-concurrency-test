@@ -148,7 +148,7 @@ pre-populated and don't resize.
 
 The Go performance numbers as compared to Java show that there is a lot of room for improvement in the available Go
 structures for concurrent applications. The Go "use channels" is only suitable when the handling performs a significant amount of work, and/or
-simplicity of code (as it is single-threaded, and the use of locks has other issues). The sync.Map should be nearly identically to the 'unshared map'
+simplicity of code (as it is single-threaded, and the use of locks has other issues). The sync.Map should be nearly identical to the 'unshared map'
 for reads (as it is for Java, especially the Get vs. MultiGet), but it is 2x slower - this is a indicator of a poor implementation, poor compiler optimizations,
 or that the underlying native operations used (CAS, etc.) need to be examined. 
 
