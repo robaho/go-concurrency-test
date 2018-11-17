@@ -1,3 +1,7 @@
+**Clarification**
+
+The "multi" timings measure the time to perform the op on N threads/routines and N is 2 to ensure sufficient cores are available so that these timings can be directly compared to the non concurrent timings.
+
 **Update**
 
 Based on feedback from Bryan Mills, I've updated the implementation using channels, and re-tested. I do not believe it has
