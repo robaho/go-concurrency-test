@@ -5,6 +5,7 @@ import (
 	"github.com/robaho/go-concurrency-test"
 	"sync"
 	"testing"
+	"time"
 )
 
 const NGOS = 2 // number of concurrent go routines for read/load tests
@@ -13,7 +14,27 @@ var um = go_concurrency.NewUnsharedCache()
 var lm = go_concurrency.NewLockCache()
 var sm = go_concurrency.NewSyncCache()
 var cm = go_concurrency.NewChannelCache()
+var sc = go_concurrency.NewShardCache()
+var im = go_concurrency.NewIntMap(256000)   // so there are 4x collisions
+var im2 = go_concurrency.NewIntMap(1000000) // so there are no collisions
 
+var Sink int
+
+func rand(r int) int {
+	/* Algorithm "xor" from p. 4 of Marsaglia, "Xorshift RNGs" */
+	r ^= r << 13
+	r ^= r >> 17
+	r ^= r << 5
+	return r & 0x7fffffff
+}
+
+func BenchmarkRand(m *testing.B) {
+	r := time.Now().Nanosecond()
+	for i := 0; i < m.N; i++ {
+		r = rand(r)
+	}
+	Sink = r
+}
 func BenchmarkMain(m *testing.B) {
 	fmt.Println("populating maps...")
 	for i := 0; i < 1000000; i++ {
@@ -21,200 +42,104 @@ func BenchmarkMain(m *testing.B) {
 		lm.Put(i, i)
 		sm.Put(i, i)
 		cm.Put(i, i)
+		sc.Put(i, i)
+		im.Put(i, i)
+		im2.Put(i, i)
 	}
-}
+	m.ResetTimer()
 
-func BenchmarkUnsharedCachePutGet(b *testing.B) {
-	var sum int
-	for i := 0; i < b.N; i++ {
-		um.Put(i, i)
-		sum += um.Get(b.N - i)
-	}
-	if sum < 0 {
-		fmt.Println("wrong value")
-	}
-}
+	impls := []go_concurrency.Cache{um, lm, sm, cm, sc, im, im2}
+	names := []string{"unshared", "lock", "sync", "channel", "shard", "intmap", "intmap2"}
+	multi := []bool{false, true, true, true, false, true, true}
 
-func BenchmarkUnsharedCachePut(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		um.Put(i, i)
-	}
-}
+	for i := 0; i < len(impls); i++ {
+		impl := impls[i]
+		m.Run(names[i]+".get", func(b *testing.B) {
+			r := time.Now().Nanosecond()
 
-func BenchmarkUnsharedCacheGet(b *testing.B) {
-	var sum int
-	for i := 0; i < b.N; i++ {
-		sum += um.Get(i)
-	}
-	if sum < 0 {
-		fmt.Println("wrong value")
-	}
-}
-
-func BenchmarkLockCachePutGet(b *testing.B) {
-	var sum int
-	for i := 0; i < b.N; i++ {
-		lm.Put(i, i)
-		sum += lm.Get(b.N - i)
-	}
-	if sum < 0 {
-		fmt.Println("wrong value")
-	}
-}
-func BenchmarkLockCachePut(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		lm.Put(i, i)
-	}
-}
-func BenchmarkLockCacheGet(b *testing.B) {
-	var sum int
-	for i := 0; i < b.N; i++ {
-		sum += lm.Get(i)
-	}
-	if sum < 0 {
-		fmt.Println("wrong value")
-	}
-}
-
-func BenchmarkSyncCachePutGet(b *testing.B) {
-	var sum int
-	for i := 0; i < b.N; i++ {
-		sm.Put(i, i)
-		sum += sm.Get(b.N - i)
-	}
-	if sum < 0 {
-		fmt.Println("wrong value")
-	}
-}
-func BenchmarkSyncCachePut(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		sm.Put(i, i)
-	}
-}
-func BenchmarkSyncCacheGet(b *testing.B) {
-	var sum int
-	for i := 0; i < b.N; i++ {
-		sum += sm.Get(i)
-	}
-	if sum < 0 {
-		fmt.Println("wrong value")
-	}
-}
-
-func BenchmarkChannelCachePutGet(b *testing.B) {
-	var sum int
-	for i := 0; i < b.N; i++ {
-		cm.Put(i, i)
-		sum += cm.Get(b.N - i)
-	}
-	if sum < 0 {
-		fmt.Println("wrong value")
-	}
-}
-
-func BenchmarkChannelCachePut(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		cm.Put(i, i)
-	}
-}
-func BenchmarkChannelCacheGet(b *testing.B) {
-	var sum int
-	for i := 0; i < b.N; i++ {
-		sum += cm.Get(i)
-	}
-	if sum < 0 {
-		fmt.Println("wrong value")
-	}
-}
-
-func BenchmarkLockCacheMultiPut(b *testing.B) {
-	wg := sync.WaitGroup{}
-	for g := 0; g < NGOS; g++ {
-		wg.Add(1)
-		go func() {
-			for i := 0; i < b.N; i++ {
-				lm.Put(i, i)
-			}
-			wg.Done()
-		}()
-	}
-	wg.Wait()
-}
-func BenchmarkSyncCacheMultiPut(b *testing.B) {
-	wg := sync.WaitGroup{}
-	for g := 0; g < NGOS; g++ {
-		wg.Add(1)
-		go func() {
-			for i := 0; i < b.N; i++ {
-				sm.Put(i, i)
-			}
-			wg.Done()
-		}()
-	}
-	wg.Wait()
-}
-func BenchmarkChannelCacheMultiPut(b *testing.B) {
-	wg := sync.WaitGroup{}
-	for g := 0; g < NGOS; g++ {
-		wg.Add(1)
-		go func() {
-			for i := 0; i < b.N; i++ {
-				cm.Put(i, i)
-			}
-			wg.Done()
-		}()
-	}
-	wg.Wait()
-}
-
-func BenchmarkLockCacheMultiGet(b *testing.B) {
-	wg := sync.WaitGroup{}
-	for g := 0; g < NGOS; g++ {
-		wg.Add(1)
-		go func() {
 			var sum int
 			for i := 0; i < b.N; i++ {
-				sum += lm.Get(i)
+				r = rand(r)
+				sum += impl.Get(r)
 			}
-			if sum < 0 {
+			if sum == 0 {
 				fmt.Println("wrong value")
 			}
-			wg.Done()
-		}()
-	}
-	wg.Wait()
-}
-func BenchmarkSyncCacheMultiGet(b *testing.B) {
-	wg := sync.WaitGroup{}
-	for g := 0; g < NGOS; g++ {
-		wg.Add(1)
-		go func() {
+
+		})
+		m.Run(names[i]+".put", func(b *testing.B) {
+			r := time.Now().Nanosecond()
+			for i := 0; i < b.N; i++ {
+				r = rand(r)
+				impl.Put(r, r)
+			}
+		})
+		m.Run(names[i]+".putget", func(b *testing.B) {
+			r := time.Now().Nanosecond()
 			var sum int
 			for i := 0; i < b.N; i++ {
-				sum += sm.Get(i)
+				r = rand(r)
+				impl.Put(r, r)
+				r = rand(r)
+				sum += impl.Get(r)
 			}
-			if sum < 0 {
-				fmt.Println("wrong value")
+			Sink = sum
+		})
+		m.Run(names[i]+".multiget", func(b *testing.B) {
+			wg := sync.WaitGroup{}
+			for g := 0; g < NGOS; g++ {
+				wg.Add(1)
+				go func() {
+					r := time.Now().Nanosecond()
+					var sum int
+					for i := 0; i < b.N; i++ {
+						r = rand(r)
+						sum += impl.Get(r)
+					}
+					Sink = sum
+					wg.Done()
+				}()
 			}
-			wg.Done()
-		}()
+			wg.Wait()
+		})
+		if !multi[i] { // some impl do not support concurrent write
+			continue
+		}
+		m.Run(names[i]+".multiput", func(b *testing.B) {
+			wg := sync.WaitGroup{}
+			for g := 0; g < NGOS; g++ {
+				wg.Add(1)
+				go func() {
+					r := time.Now().Nanosecond()
+
+					for i := 0; i < b.N; i++ {
+						r = rand(r)
+						impl.Put(r, r)
+					}
+					wg.Done()
+				}()
+			}
+			wg.Wait()
+		})
+		m.Run(names[i]+".multiputget", func(b *testing.B) {
+			wg := sync.WaitGroup{}
+			for g := 0; g < NGOS; g++ {
+				wg.Add(1)
+				go func() {
+					r := time.Now().Nanosecond()
+
+					var sum int
+					for i := 0; i < b.N; i++ {
+						r = rand(r)
+						sum += impl.Get(r)
+						r = rand(r)
+						impl.Put(r, r)
+					}
+					Sink = sum
+					wg.Done()
+				}()
+			}
+			wg.Wait()
+		})
 	}
-	wg.Wait()
-}
-func BenchmarkChannelCacheMultiGet(b *testing.B) {
-	wg := sync.WaitGroup{}
-	for g := 0; g < NGOS; g++ {
-		wg.Add(1)
-		go func() {
-			var sum int
-			for i := 0; i < b.N; i++ {
-				sum += cm.Get(i)
-			}
-			if sum < 0 {
-				fmt.Println("wrong value")
-			}
-			wg.Done()
-		}()
-	}
-	wg.Wait()
 }

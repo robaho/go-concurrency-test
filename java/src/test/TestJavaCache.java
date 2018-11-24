@@ -5,16 +5,18 @@ import org.openjdk.jmh.annotations.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.*;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 interface AnyCache {
-    int MaxMapSize = 500000;
+    int MaxMapSize = 1000000;
     int get(int key);
     void put(int key,int value);
 }
 
 class MyConcurrentCache implements AnyCache {
 
-    ConcurrentHashMap<Integer,Integer> m = new ConcurrentHashMap();
+    final ConcurrentHashMap<Integer,Integer> m = new ConcurrentHashMap();
     @Override
     public int get(int key) {
         return m.get(key%MaxMapSize);
@@ -22,7 +24,33 @@ class MyConcurrentCache implements AnyCache {
 
     @Override
     public void put(int key,int value) {
-        m.put(key%MaxMapSize,value%MaxMapSize);
+        m.put(key%MaxMapSize,value);
+    }
+}
+
+class MyLockCache implements AnyCache {
+
+    final ReadWriteLock rw = new ReentrantReadWriteLock(false);
+    final HashMap<Integer,Integer> m = new HashMap();
+
+    @Override
+    public int get(int key) {
+        rw.readLock().lock();
+        try {
+            return m.get(key % MaxMapSize);
+        } finally {
+            rw.readLock().unlock();
+        }
+    }
+
+    @Override
+    public void put(int key,int value) {
+        rw.writeLock().lock();
+        try {
+            m.put(key % MaxMapSize, value);
+        } finally {
+            rw.writeLock().unlock();
+        }
     }
 }
 
@@ -32,8 +60,8 @@ the map is pre-populated so it is never resized. There is no easy way in jmh to 
 certain benchmarks to certain parameters
  */
 class MyUnsharedCache implements AnyCache {
+    final Map<Integer,Integer> m = new HashMap();
 
-    Map<Integer,Integer> m = new HashMap();
     @Override
     public int get(int key) {
         return m.get(key%MaxMapSize);
@@ -41,134 +69,214 @@ class MyUnsharedCache implements AnyCache {
 
     @Override
     public void put(int key,int value) {
-        m.put(key%MaxMapSize,value%MaxMapSize);
+        m.put(key%MaxMapSize,value);
     }
 }
 
+class IntMap implements AnyCache {
+    static class node {
+        int key,value;
+        node next;
+    }
+
+    private final node[] table;
+    private final int mask;
+    private static int nextPowerOf2(int v) {
+        v--;
+        v |= v >> 1;
+        v |= v >> 2;
+        v |= v >> 4;
+        v |= v >> 8;
+        v |= v >> 16;
+        v++;
+        return v;
+    }
+    public IntMap(int size) {
+        size = nextPowerOf2(size);
+        table = new node[size];
+        mask = size-1;
+    }
+    @Override
+    public int get(int key) {
+        key = key % MaxMapSize;
+        node n = table[key&mask];
+        if (n==null) {
+            return 0;
+        }
+        for(;n!=null;n=n.next) {
+            if(n.key==key){
+                return n.value;
+            }
+        }
+        return 0;
+    }
+
+    @Override
+    public void put(int key, int value) {
+        key = key % MaxMapSize;
+        node head = table[key&mask];
+        for(node n=head;n!=null;n=n.next) {
+            if(n.key==key) {
+                n.value=value;
+                return;
+            }
+        }
+        node n = new node();
+        n.key=key;
+        n.value=value;
+        n.next=head;
+        table[key&mask]=n;
+    }
+}
 
 @State(Scope.Benchmark)
-@Fork(0)
+@Fork(1)
 @Warmup(iterations = 1)
-@Measurement(iterations = 3, time = 1)
+@Measurement(iterations = 5, time = 3)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 
 public class TestJavaCache {
-    @Param({"unshared", "concurrent"})
+    static int rand(int r) {
+        /* Algorithm "xor" from p. 4 of Marsaglia, "Xorshift RNGs" */
+        r ^= r << 13;
+        r ^= r >> 17;
+        r ^= r << 5;
+        return r & 0x7fffffff;
+    }
+
+    @Param({"unshared", "concurrent", "lock","intmap","intmap2"})
     public String arg;
 
     static AnyCache m;
 
     static ExecutorService e;
 
+    public int Sink;
+
     @Setup
     public void setup() {
-        if(arg.equals("unshared")) {
-            m = new MyUnsharedCache();
-        } else {
-            m = new MyConcurrentCache();
+        switch(arg){
+            case "unshared":
+                m = new MyUnsharedCache(); break;
+            case "concurrent":
+                m = new MyConcurrentCache(); break;
+            case "lock":
+                m = new MyLockCache(); break;
+            case "intmap":
+                m = new IntMap(256000); break;
+            case "intmap2":
+                m = new IntMap(1000000); break;
         }
 
         e = Executors.newFixedThreadPool(2);
-        for(int i=0;i<MyConcurrentCache.MaxMapSize;i++){
+        for(int i=0;i<1000000;i++){
             m.put(i,i);
         }
     }
     @TearDown
     public void tearDown() {
         e.shutdown();
-        for(int i=0;i<MyConcurrentCache.MaxMapSize;i++){
-            if (m.get(i)!=i) {
+        for(int i=0;i<1000000;i++){
+            if (m.get(i)%AnyCache.MaxMapSize!=i%AnyCache.MaxMapSize) {
                 throw new IllegalStateException("index "+i+" = "+m.get(i));
             }
         }
     }
 
+    @Benchmark
+    @OperationsPerInvocation(1000000)
+    public void Test0Get() {
+        int sum=0;
+        int r = (int)System.nanoTime();
+        for(int i=0;i<1000000;i++) {
+            r = rand(r);
+            sum+=m.get(r);
+        }
+        Sink = sum;
+    }
 
     @Benchmark
     @OperationsPerInvocation(1000000)
-    public void Test0PutGet() {
+    public void Test2Put() {
+        int r = (int)System.nanoTime();
+        for(int i=0;i<1000000;i++) {
+            r = rand(r);
+            m.put(r,r);
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(1000000)
+    public void Test3PutGet() {
+        int r = (int)System.nanoTime();
         int sum=0;
         for(int i=0;i<1000000;i++) {
-            m.put(i,i);
-            sum+=m.get(1000000-i);
+            r = rand(r);
+            m.put(r,r);
+            r = rand(r);
+            sum+=m.get(r);
         }
-        if(sum<0){
-            System.out.println("error");
-        }
+        Sink = sum;
     }
 
     @Benchmark
     @OperationsPerInvocation(1000000)
-    public void Test1Put() {
-        for(int i=0;i<1000000;i++) {
-            m.put(i,i);
-        }
-    }
-    @Benchmark
-    @OperationsPerInvocation(1000000)
-    public void Test2Get() {
-        int sum=0;
-        for(int i=0;i<1000000;i++) {
-            sum+=m.get(i);
-        }
-        if(sum<0){
-            System.out.println("error");
-        }
-    }
-
-    @Benchmark
-    @OperationsPerInvocation(1000000)
-    public void Test3MultiPutGet() throws InterruptedException {
+    public void Test4MultiGet() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(2);
 
-        Runnable r = () -> {
-            for(int i=0;i<1000000;i++) {
-                m.put(i,i);
-                if(m.get(1000000-i)<0){
-                    System.out.println("error");
-                }
-            }
-            latch.countDown();
-        };
-        e.execute(r);
-        e.execute(r);
-        latch.await();
-    }
-
-    @Benchmark
-    @OperationsPerInvocation(1000000)
-    public void Test4MultiPut() throws InterruptedException {
-        CountDownLatch latch = new CountDownLatch(2);
-
-        Runnable r = () -> {
-            for(int i=0;i<1000000;i++) {
-                m.put(i,i);
-            }
-            latch.countDown();
-        };
-        e.execute(r);
-        e.execute(r);
-        latch.await();
-    }
-
-    @Benchmark
-    @OperationsPerInvocation(1000000)
-    public void Test5MultiGet() throws InterruptedException {
-        CountDownLatch latch = new CountDownLatch(2);
-
-        Runnable r = () -> {
+        Runnable run = () -> {
+            int r = (int)System.nanoTime();
             int sum=0;
             for(int i=0;i<1000000;i++) {
-                sum+=m.get(i);
+                r = rand(r);
+                sum+=m.get(r);
             }
-            if(sum<0) {
-                System.out.println("error");
+            Sink = sum;
+            latch.countDown();
+        };
+        e.execute(run);
+        e.execute(run);
+        latch.await();
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(1000000)
+    public void Test5MultiPut() throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(2);
+
+        Runnable run = () -> {
+            int r = (int)System.nanoTime();
+            for(int i=0;i<1000000;i++) {
+                r = rand(r);
+                m.put(r,r);
             }
             latch.countDown();
         };
-        e.execute(r);
-        e.execute(r);
+        e.execute(run);
+        e.execute(run);
+        latch.await();
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(1000000)
+    public void Test6MultiPutGet() throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(2);
+
+        Runnable run = () -> {
+            int r = (int)System.nanoTime();
+            int sum = 0;
+            for(int i=0;i<1000000;i++) {
+                r = rand(r);
+                m.put(r,r);
+                r = rand(r);
+                sum += m.get(r);
+            }
+            Sink = sum;
+            latch.countDown();
+        };
+        e.execute(run);
+        e.execute(run);
         latch.await();
     }
 

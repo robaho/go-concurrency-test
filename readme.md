@@ -1,3 +1,22 @@
+**Update 11/24/18**
+
+I added 'intmap' versions - which are fixed sized maps (without resizing). The'intmap2' is sized to
+avoid any collisions, 'intmap' has 4x collisions.
+
+I added 'C' versions of the 'intmap' for comparison. I also added a 'lock map' in Java similar to Go.
+
+In all cases, the maps are pre-allocated to avoid any allocation overhead.
+
+The major change across the board was to use random get/put indexes as the linear read/put was biased towards Java, since the Go uses
+an alternate hash method so that sequential keys are not sequential in memory.
+
+I re-ran the tests with latest versions, Go 1.11.2, and Java 1.8_191, and C was compiled with clang-1000.11.45.5
+
+The tests now show Go to be a clear winner when using Locks, but sync.Map has significant performance issues.
+
+Both Go and Java perform very close to the optimized C versions, with Java bettering Go in almost all cases (intmap tests) - this is probably
+the reason the Go map implementation uses arrays of structs rather than a linked list of nodes.
+
 **Update**
 
 Based on feedback from Bryan Mills, I've updated the implementation using channels, and re-tested. I do not believe it has
@@ -25,9 +44,11 @@ I added an 'unshared' cache to the Java tests for an additional baseline.
 
 **Summary**
 
-The Go language has significant room for improvement in terms of concurrent data structure performance, with the current implementations being far
-slower than the equivalent Java ones. This is no way to claim that Java is superior to Go, as there are other features of Go
-(low GC pauses, lower memory footprint, no warm-up time, etc.) that make it a superior choice for many applications.
+The Go sync.Map implementation has significant room for improvement, performing far worse than Java ConcurrentHashMap, 
+and locks should be used for low concurrent access, especially for high read weighted use cases.
+
+The Go synchronization primatives and Go routine scheduling outperform Java with locks by a very wide margin. The user level context switching
+is ideal.
 
 **Background**
 
@@ -54,7 +75,7 @@ The tests run under [go bench]([https://golang.org/pkg/testing/) for Go, and [jm
 
 In both cases, identical hardware was used, which is a 3.4 ghz Core i7, with 4 cores (8 threads), under OSX 10.13.6.
 
-The software versions are Go 1.11, and Java 1.8_181.
+The software versions are Go 1.11.2, and Java 1.8_191, Java OpenJDK11 with Shenandoah GC, and LLVM version 10.0.0 (clang-1000.11.45.5)
 
 **Testing Methodology**
 
@@ -80,69 +101,121 @@ Any GC related activity is included in the tests. No attempt was made to reduce,
 **Go Test Results**
 
 ```
-BenchmarkUnsharedCachePutGet-8    	10000000	       121 ns/op
-BenchmarkUnsharedCachePut-8       	20000000	        66.4 ns/op
-BenchmarkUnsharedCacheGet-8       	20000000	        62.5 ns/op
-BenchmarkLockCachePutGet-8        	10000000	       196 ns/op
-BenchmarkLockCachePut-8           	20000000	       112 ns/op
-BenchmarkLockCacheGet-8           	20000000	        92.6 ns/op
-BenchmarkSyncCachePutGet-8        	 3000000	       439 ns/op
-BenchmarkSyncCachePut-8           	 5000000	       265 ns/op
-BenchmarkSyncCacheGet-8           	10000000	       159 ns/op
-BenchmarkChannelCachePutGet-8     	 1000000	      1389 ns/op
-BenchmarkChannelCachePut-8        	 3000000	       541 ns/op
-BenchmarkChannelCacheGet-8        	 2000000	       887 ns/op
-BenchmarkLockCacheMultiPut-8      	 5000000	       266 ns/op
-BenchmarkSyncCacheMultiPut-8      	 5000000	       279 ns/op
-BenchmarkChannelCacheMultiPut-8   	 2000000	       809 ns/op
-BenchmarkLockCacheMultiGet-8      	10000000	       140 ns/op
-BenchmarkSyncCacheMultiGet-8      	10000000	       177 ns/op
-BenchmarkChannelCacheMultiGet-8   	 1000000	      1429 ns/op
+BenchmarkMain/unshared.get-8         	20000000	        90.2 ns/op
+BenchmarkMain/unshared.put-8         	20000000	        97.2 ns/op
+BenchmarkMain/unshared.putget-8      	10000000	       199 ns/op
+BenchmarkMain/unshared.multiget-8    	20000000	        93.6 ns/op
+BenchmarkMain/lock.get-8             	20000000	       110 ns/op
+BenchmarkMain/lock.put-8             	10000000	       125 ns/op
+BenchmarkMain/lock.putget-8          	 5000000	       232 ns/op
+BenchmarkMain/lock.multiget-8        	10000000	       148 ns/op
+BenchmarkMain/lock.multiput-8        	 5000000	       302 ns/op
+BenchmarkMain/lock.multiputget-8     	 2000000	       575 ns/op
+BenchmarkMain/sync.get-8             	 5000000	       291 ns/op
+BenchmarkMain/sync.put-8             	 5000000	       317 ns/op
+BenchmarkMain/sync.putget-8          	 2000000	       707 ns/op
+BenchmarkMain/sync.multiget-8        	 5000000	       379 ns/op
+BenchmarkMain/sync.multiput-8        	 5000000	       347 ns/op
+BenchmarkMain/sync.multiputget-8     	 2000000	       721 ns/op
+BenchmarkMain/channel.get-8          	 2000000	       968 ns/op
+BenchmarkMain/channel.put-8          	 3000000	       560 ns/op
+BenchmarkMain/channel.putget-8       	 1000000	      1439 ns/op
+BenchmarkMain/channel.multiget-8     	 1000000	      1560 ns/op
+BenchmarkMain/channel.multiput-8     	 2000000	       832 ns/op
+BenchmarkMain/channel.multiputget-8  	 1000000	      2325 ns/op
+BenchmarkMain/shard.get-8            	20000000	       102 ns/op
+BenchmarkMain/shard.put-8            	20000000	       102 ns/op
+BenchmarkMain/shard.putget-8         	10000000	       201 ns/op
+BenchmarkMain/shard.multiget-8       	20000000	       103 ns/op
+BenchmarkMain/intmap.get-8           	20000000	       115 ns/op
+BenchmarkMain/intmap.put-8           	10000000	       208 ns/op
+BenchmarkMain/intmap.putget-8        	 5000000	       285 ns/op
+BenchmarkMain/intmap.multiget-8      	20000000	       113 ns/op
+BenchmarkMain/intmap.multiput-8      	10000000	       212 ns/op
+BenchmarkMain/intmap.multiputget-8   	 5000000	       288 ns/op
+BenchmarkMain/intmap2.get-8          	30000000	        54.8 ns/op
+BenchmarkMain/intmap2.put-8          	10000000	       122 ns/op
+BenchmarkMain/intmap2.putget-8       	10000000	       199 ns/op
+BenchmarkMain/intmap2.multiget-8     	20000000	        58.5 ns/op
+BenchmarkMain/intmap2.multiput-8     	10000000	       130 ns/op
+BenchmarkMain/intmap2.multiputget-8  	10000000	       174 ns/op
 ```
 
 **Go Analysis**
 
 There are several interesting, and disconcerting aspects.
 
-1. The relative low performance of the unshared cache is disappointing, 
-as this should be no more that a single indirection and a load or store. 
-2. The sync.Map performs no better than the map using locks, even for Get. Ordinarliy, this would be a sign that sync.Map was implemented using
-locks, but this is not the case. There is a lock-free component, but it doesn't appear to perform as it should.
-3. Continuing on #3, the 'multi' using sync performs only marginally better than the lock version. Again, this should only be a volatile load, with the
-expectation of performance equal to the unshared get.
-4. The channel method is more than 5x slower than the others, and this is using a very simple key/value structure, although a more complex one would
+1. The sync.Map performs far worse than the map using locks, even for Get - almost 3x slower.
+2. Continuing on #1, the 'multi get' using sync performs worse than get. Again, this should only be a volatile load, with the
+expectation of performance equal to the unshared get, or at least the sync.Map singular read.
+3. The channel method is more than 5x slower than the others, and this is using a very simple key/value structure, although a more complex one would
 probably necessitate using pointers.
 
 **Java Test Results**
 
 ```
-using 1 warm-up iteration, and 3 iterations of 1 sec
+using 1 fork, 1 warm-up iteration, and 5 iterations of 1 sec
 
-Benchmark                            (arg)  Mode  Cnt   Score    Error  Units
-TestJavaCache.Test0PutGet         unshared  avgt    3  36.375 ±  7.426  ns/op
-TestJavaCache.Test0PutGet       concurrent  avgt    3  48.144 ±  6.811  ns/op
-TestJavaCache.Test1Put            unshared  avgt    3  27.740 ±  6.255  ns/op
-TestJavaCache.Test1Put          concurrent  avgt    3  33.531 ±  7.990  ns/op
-TestJavaCache.Test2Get            unshared  avgt    3  14.736 ±  7.691  ns/op
-TestJavaCache.Test2Get          concurrent  avgt    3  15.844 ±  4.401  ns/op
-TestJavaCache.Test3MultiPutGet    unshared  avgt    3  50.509 ± 24.125  ns/op
-TestJavaCache.Test3MultiPutGet  concurrent  avgt    3  85.440 ± 28.356  ns/op
-TestJavaCache.Test4MultiPut       unshared  avgt    3  41.901 ±  0.181  ns/op
-TestJavaCache.Test4MultiPut     concurrent  avgt    3  51.607 ±  6.243  ns/op
-TestJavaCache.Test5MultiGet       unshared  avgt    3  12.421 ±  2.952  ns/op
-TestJavaCache.Test5MultiGet     concurrent  avgt    3  16.409 ±  6.469  ns/op
+Java8
+Benchmark                            (arg)  Mode  Cnt     Score     Error  Units
+TestJavaCache.Test0Get            unshared  avgt    5    94.786 ±   1.913  ns/op
+TestJavaCache.Test0Get          concurrent  avgt    5    83.004 ±   1.649  ns/op
+TestJavaCache.Test0Get                lock  avgt    5   175.119 ±   5.405  ns/op
+TestJavaCache.Test0Get              intmap  avgt    5    66.975 ±   1.521  ns/op
+TestJavaCache.Test0Get             intmap2  avgt    5    28.444 ±   0.883  ns/op
+TestJavaCache.Test2Put            unshared  avgt    5   121.763 ±   3.709  ns/op
+TestJavaCache.Test2Put          concurrent  avgt    5   164.810 ±   8.860  ns/op
+TestJavaCache.Test2Put                lock  avgt    5   162.049 ±   4.998  ns/op
+TestJavaCache.Test2Put              intmap  avgt    5   139.025 ±   5.639  ns/op
+TestJavaCache.Test2Put             intmap2  avgt    5    91.087 ±   2.407  ns/op
+TestJavaCache.Test3PutGet         unshared  avgt    5   248.434 ±  10.734  ns/op
+TestJavaCache.Test3PutGet       concurrent  avgt    5   289.162 ±  24.658  ns/op
+TestJavaCache.Test3PutGet             lock  avgt    5   398.555 ±  15.306  ns/op
+TestJavaCache.Test3PutGet           intmap  avgt    5   195.730 ±   9.293  ns/op
+TestJavaCache.Test3PutGet          intmap2  avgt    5   110.010 ±  12.614  ns/op
+TestJavaCache.Test4MultiGet       unshared  avgt    5    96.899 ±   2.986  ns/op
+TestJavaCache.Test4MultiGet     concurrent  avgt    5    87.797 ±   4.674  ns/op
+TestJavaCache.Test4MultiGet           lock  avgt    5   321.818 ±   5.393  ns/op
+TestJavaCache.Test4MultiGet         intmap  avgt    5    69.969 ±   1.943  ns/op
+TestJavaCache.Test4MultiGet        intmap2  avgt    5    31.432 ±   2.695  ns/op
+TestJavaCache.Test5MultiPut       unshared  avgt    5   138.192 ±   6.232  ns/op
+TestJavaCache.Test5MultiPut     concurrent  avgt    5   184.631 ±   9.153  ns/op
+TestJavaCache.Test5MultiPut           lock  avgt    5   871.576 ±  31.919  ns/op
+TestJavaCache.Test5MultiPut         intmap  avgt    5   142.152 ±   8.195  ns/op
+TestJavaCache.Test5MultiPut        intmap2  avgt    5    93.260 ±   3.831  ns/op
+TestJavaCache.Test6MultiPutGet    unshared  avgt    5   272.325 ±   6.194  ns/op
+TestJavaCache.Test6MultiPutGet  concurrent  avgt    5   307.602 ±  14.994  ns/op
+TestJavaCache.Test6MultiPutGet        lock  avgt    5  3417.716 ± 259.368  ns/op
+TestJavaCache.Test6MultiPutGet      intmap  avgt    5   202.595 ±  12.030  ns/op
+TestJavaCache.Test6MultiPutGet     intmap2  avgt    5   124.928 ±   8.517  ns/op
 
 ```
-*** The Java multi-unshared are not valid, but no easy way to exclude with jmh. It doesn't crash because the maps are
+*** The Java multi-unshared and intmap are not valid, but no easy way to exclude with jmh. It doesn't crash because the maps are
 pre-populated and don't resize.
 
 **Java Analysis**
 
 1. The warm-up phase matters little in tests like this, since so many iterations are required.
-1. The Java test results are across the board far superior to the equivalent Go operations, almost 10x faster in the best case, and 2x in the worst.
-2. The Java 'multi get' is in line with the 'get', since it should be a lock-free volatile read.
+2. The Java concurrent 'multi get' is in line with the 'get', since it should be a lock-free volatile read.
 3. The results shows that Java's dynamic inlining can achieve amazing performance.
 4. The Java boxing of primitives into objects (required by CHM), seems very efficient. 
+5. When using equal read & write, the Java "lock" methods shows very poor performance compared with the concurrent.
+
+**C test Results**
+
+```
+With -O0
+intmap put = 226.439600 ns/op
+intmap get = 127.387200 ns/op
+intmap2 put = 138.979200 ns/op
+intmap2 get = 75.875400 ns/op
+
+With -O2
+intmap put = 194.733600 ns/op
+intmap get = 63.983200 ns/op
+intmap2 put = 120.701800 ns/op
+intmap2 get = 31.582800 ns/op
+```
 
 **Overall Findings**
 

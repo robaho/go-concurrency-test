@@ -1,8 +1,65 @@
 package go_concurrency
 
-import "sync"
+import (
+	"sync"
+)
 
-const MaxMapSize = 500000
+const MaxMapSize = 1000000
+
+func nextPowerOf2(v int) int {
+	v--
+	v |= v >> 1
+	v |= v >> 2
+	v |= v >> 4
+	v |= v >> 8
+	v |= v >> 16
+	v++
+	return v
+}
+
+type node struct {
+	key, value int
+	next       *node
+}
+
+type IntMap struct {
+	table []*node
+	mask  int
+}
+
+func NewIntMap(size int) *IntMap {
+	size = nextPowerOf2(size)
+	m := IntMap{}
+	m.table = make([]*node, size)
+	m.mask = size - 1
+	return &m
+}
+
+func (m *IntMap) Get(key int) int {
+	key = key % MaxMapSize
+	node := m.table[key&m.mask]
+	if node == nil {
+		return 0
+	}
+	for ; node != nil; node = node.next {
+		if node.key == key {
+			return node.value
+		}
+	}
+	return 0
+}
+func (m *IntMap) Put(key int, value int) {
+	key = key % MaxMapSize
+	head := m.table[key&m.mask]
+	for node := head; node != nil; node = node.next {
+		if node.key == key {
+			node.value = value
+			return
+		}
+	}
+	n := &node{key: key, value: value, next: head}
+	m.table[key&m.mask] = n
+}
 
 type Cache interface {
 	Get(key int) int
@@ -29,6 +86,26 @@ func (m *LockCache) Put(key int, value int) {
 	m.Lock()
 	m.m[key%MaxMapSize] = value
 	m.Unlock() // non-idiomatic go, but avoid defer performance hit
+}
+
+type ShardCache struct {
+	maps [10]map[int]int
+}
+
+func NewShardCache() *ShardCache {
+	m := ShardCache{}
+	for i := 0; i < 10; i++ {
+		m.maps[i] = make(map[int]int)
+	}
+	return &m
+}
+
+func (m *ShardCache) Get(key int) int {
+	val, _ := m.maps[key%10][key%MaxMapSize]
+	return val
+}
+func (m *ShardCache) Put(key int, value int) {
+	m.maps[key%10][key%MaxMapSize] = value
 }
 
 type UnsharedCache map[int]int
