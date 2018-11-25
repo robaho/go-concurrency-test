@@ -9,7 +9,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 interface AnyCache {
-    int Mask = (1024*1024)-1;
     int get(int key);
     void put(int key,int value);
 }
@@ -19,12 +18,12 @@ class MyConcurrentCache implements AnyCache {
     final ConcurrentHashMap<Integer,Integer> m = new ConcurrentHashMap();
     @Override
     public int get(int key) {
-        return m.get(key&Mask);
+        return m.get(key);
     }
 
     @Override
     public void put(int key,int value) {
-        m.put(key&Mask,value);
+        m.put(key,value);
     }
 }
 
@@ -37,7 +36,7 @@ class MyLockCache implements AnyCache {
     public int get(int key) {
         rw.readLock().lock();
         try {
-            return m.get(key&Mask);
+            return m.get(key);
         } finally {
             rw.readLock().unlock();
         }
@@ -47,7 +46,7 @@ class MyLockCache implements AnyCache {
     public void put(int key,int value) {
         rw.writeLock().lock();
         try {
-            m.put(key & Mask, value);
+            m.put(key, value);
         } finally {
             rw.writeLock().unlock();
         }
@@ -64,12 +63,12 @@ class MyUnsharedCache implements AnyCache {
 
     @Override
     public int get(int key) {
-        return m.get(key& Mask);
+        return m.get(key);
     }
 
     @Override
     public void put(int key,int value) {
-        m.put(key&Mask,value);
+        m.put(key,value);
     }
 }
 
@@ -98,7 +97,6 @@ class IntMap implements AnyCache {
     }
     @Override
     public int get(int key) {
-        key = key & Mask;
         node n = table[key&mask];
         if (n==null) {
             return 0;
@@ -113,7 +111,6 @@ class IntMap implements AnyCache {
 
     @Override
     public void put(int key, int value) {
-        key = key & Mask;
         node head = table[key&mask];
         for(node n=head;n!=null;n=n.next) {
             if(n.key==key) {
@@ -137,6 +134,8 @@ class IntMap implements AnyCache {
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 
 public class TestJavaCache {
+    final int Mask = (1024*1024)-1;
+
     static int rand(int r) {
         /* Algorithm "xor" from p. 4 of Marsaglia, "Xorshift RNGs" */
         r ^= r << 13;
@@ -170,15 +169,15 @@ public class TestJavaCache {
         }
 
         e = Executors.newFixedThreadPool(2);
-        for(int i=0;i<=AnyCache.Mask;i++){
+        for(int i=0;i<=Mask;i++){
             m.put(i,i);
         }
     }
     @TearDown
     public void tearDown() {
         e.shutdown();
-        for(int i=0;i<=AnyCache.Mask;i++){
-            if ((m.get(i)&AnyCache.Mask) != (i&AnyCache.Mask)) {
+        for(int i=0;i<=Mask;i++){
+            if ((m.get(i)&Mask) != (i&Mask)) {
                 throw new IllegalStateException("index "+i+" = "+m.get(i));
             }
         }
@@ -191,7 +190,7 @@ public class TestJavaCache {
         int r = (int)System.nanoTime();
         for(int i=0;i<1000000;i++) {
             r = rand(r);
-            sum+=m.get(r);
+            sum+=m.get(r&Mask);
         }
         Sink = sum;
     }
@@ -202,7 +201,7 @@ public class TestJavaCache {
         int r = (int)System.nanoTime();
         for(int i=0;i<1000000;i++) {
             r = rand(r);
-            m.put(r,r);
+            m.put(r&Mask,r);
         }
     }
 
@@ -213,9 +212,9 @@ public class TestJavaCache {
         int sum=0;
         for(int i=0;i<1000000;i++) {
             r = rand(r);
-            m.put(r,r);
+            m.put(r&Mask,r);
             r = rand(r);
-            sum+=m.get(r);
+            sum+=m.get(r&Mask);
         }
         Sink = sum;
     }

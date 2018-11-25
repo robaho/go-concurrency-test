@@ -43,7 +43,7 @@ func testget(impl go_concurrency.Cache, b *testing.B) {
 	var sum int
 	for i := 0; i < b.N; i++ {
 		r = rand(r)
-		sum += impl.Get(r)
+		sum += impl.Get(r & Mask)
 	}
 	Sink = sum
 }
@@ -51,7 +51,7 @@ func testput(impl go_concurrency.Cache, b *testing.B) {
 	r := time.Now().Nanosecond()
 	for i := 0; i < b.N; i++ {
 		r = rand(r)
-		impl.Put(r, r)
+		impl.Put(r&Mask, r)
 	}
 }
 func testputget(impl go_concurrency.Cache, b *testing.B) {
@@ -59,9 +59,9 @@ func testputget(impl go_concurrency.Cache, b *testing.B) {
 	var sum int
 	for i := 0; i < b.N; i++ {
 		r = rand(r)
-		impl.Put(r, r)
+		impl.Put(r&Mask, r)
 		r = rand(r)
-		sum += impl.Get(r)
+		sum += impl.Get(r & Mask)
 	}
 	Sink = sum
 }
