@@ -47,7 +47,7 @@ I added an 'unshared' cache to the Java tests for an additional baseline.
 The Go sync.Map implementation has significant room for improvement, performing far worse than Java ConcurrentHashMap, 
 and locks should be used for low concurrent access, especially for high read weighted use cases.
 
-The Go synchronization primatives and Go routine scheduling outperform Java with locks by a very wide margin. The user level context switching
+The Go synchronization primitives and Go routine scheduling outperform Java with locks by a very wide margin. The user level context switching
 is ideal.
 
 **Background**
