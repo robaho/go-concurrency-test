@@ -1,6 +1,6 @@
 **Update 11/24/18**
 
-I added 'intmap' versions - which are fixed sized maps (without resizing). The'intmap2' is sized to
+I added 'intmap' versions - which are fixed sized maps (without resizing). The 'intmap2' is sized to
 avoid any collisions, 'intmap' has 4x collisions.
 
 I added 'C' versions of the 'intmap' for comparison. I also added a 'lock map' in Java similar to Go.
@@ -18,6 +18,10 @@ The tests now show Go to be a clear winner when using Locks, but sync.Map has si
 
 Both Go and Java perform very close to the optimized C versions, with Java bettering Go in almost all cases (intmap tests) - this is probably
 the reason the Go map implementation uses arrays of structs rather than a linked list of nodes.
+
+*** A note about the multi timings... They are not divided by the number of Go routines/threads (which doubles the number of operations), but since there
+are only 2 and ample cores available- meaning they should execute concurrently, it measures the overhead more directly since the timings
+ can be directly compared to the single routine/thread case. 
 
 **Update**
 
