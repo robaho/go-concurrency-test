@@ -79,7 +79,7 @@ int Sink;
 void test(char *name,struct table *t) {
     int mask = (1024*1024)-1;
     struct timeval start, end;
-    for(int i=0;i<1000000;i++){
+    for(int i=0;i<=mask;i++){
         insert(t,i,i);
     }
     gettimeofday(&start, NULL);
