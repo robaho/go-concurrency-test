@@ -62,10 +62,7 @@ func BenchmarkMain(m *testing.B) {
 				r = rand(r)
 				sum += impl.Get(r)
 			}
-			if sum == 0 {
-				fmt.Println("wrong value")
-			}
-
+			Sink = sum
 		})
 		m.Run(names[i]+".put", func(b *testing.B) {
 			r := time.Now().Nanosecond()
