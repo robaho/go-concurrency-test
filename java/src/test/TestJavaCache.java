@@ -9,7 +9,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 interface AnyCache {
-    int MaxMapSize = 1000000;
+    int Mask = (1024*1024)-1;
     int get(int key);
     void put(int key,int value);
 }
@@ -19,12 +19,12 @@ class MyConcurrentCache implements AnyCache {
     final ConcurrentHashMap<Integer,Integer> m = new ConcurrentHashMap();
     @Override
     public int get(int key) {
-        return m.get(key%MaxMapSize);
+        return m.get(key&Mask);
     }
 
     @Override
     public void put(int key,int value) {
-        m.put(key%MaxMapSize,value);
+        m.put(key&Mask,value);
     }
 }
 
@@ -37,7 +37,7 @@ class MyLockCache implements AnyCache {
     public int get(int key) {
         rw.readLock().lock();
         try {
-            return m.get(key % MaxMapSize);
+            return m.get(key&Mask);
         } finally {
             rw.readLock().unlock();
         }
@@ -47,7 +47,7 @@ class MyLockCache implements AnyCache {
     public void put(int key,int value) {
         rw.writeLock().lock();
         try {
-            m.put(key % MaxMapSize, value);
+            m.put(key & Mask, value);
         } finally {
             rw.writeLock().unlock();
         }
@@ -64,12 +64,12 @@ class MyUnsharedCache implements AnyCache {
 
     @Override
     public int get(int key) {
-        return m.get(key%MaxMapSize);
+        return m.get(key& Mask);
     }
 
     @Override
     public void put(int key,int value) {
-        m.put(key%MaxMapSize,value);
+        m.put(key&Mask,value);
     }
 }
 
@@ -98,7 +98,7 @@ class IntMap implements AnyCache {
     }
     @Override
     public int get(int key) {
-        key = key % MaxMapSize;
+        key = key & Mask;
         node n = table[key&mask];
         if (n==null) {
             return 0;
@@ -113,7 +113,7 @@ class IntMap implements AnyCache {
 
     @Override
     public void put(int key, int value) {
-        key = key % MaxMapSize;
+        key = key & Mask;
         node head = table[key&mask];
         for(node n=head;n!=null;n=n.next) {
             if(n.key==key) {
@@ -170,15 +170,15 @@ public class TestJavaCache {
         }
 
         e = Executors.newFixedThreadPool(2);
-        for(int i=0;i<1000000;i++){
+        for(int i=0;i<=AnyCache.Mask;i++){
             m.put(i,i);
         }
     }
     @TearDown
     public void tearDown() {
         e.shutdown();
-        for(int i=0;i<1000000;i++){
-            if (m.get(i)%AnyCache.MaxMapSize!=i%AnyCache.MaxMapSize) {
+        for(int i=0;i<=AnyCache.Mask;i++){
+            if ((m.get(i)&AnyCache.Mask) != (i&AnyCache.Mask)) {
                 throw new IllegalStateException("index "+i+" = "+m.get(i));
             }
         }

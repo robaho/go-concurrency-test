@@ -4,7 +4,7 @@ import (
 	"sync"
 )
 
-const MaxMapSize = 1000000
+const Mask = (1024 * 1024) - 1
 
 func nextPowerOf2(v int) int {
 	v--
@@ -36,7 +36,7 @@ func NewIntMap(size int) *IntMap {
 }
 
 func (m *IntMap) Get(key int) int {
-	key = key % MaxMapSize
+	key = key & Mask
 	node := m.table[key&m.mask]
 	if node == nil {
 		return 0
@@ -49,7 +49,7 @@ func (m *IntMap) Get(key int) int {
 	return 0
 }
 func (m *IntMap) Put(key int, value int) {
-	key = key % MaxMapSize
+	key = key & Mask
 	head := m.table[key&m.mask]
 	for node := head; node != nil; node = node.next {
 		if node.key == key {
@@ -78,13 +78,13 @@ func NewLockCache() *LockCache {
 
 func (m *LockCache) Get(key int) int {
 	m.RLock()
-	val, _ := m.m[key%MaxMapSize]
+	val, _ := m.m[key&Mask]
 	m.RUnlock() // non-idiomatic go, but avoid defer performance hit
 	return val
 }
 func (m *LockCache) Put(key int, value int) {
 	m.Lock()
-	m.m[key%MaxMapSize] = value
+	m.m[key&Mask] = value
 	m.Unlock() // non-idiomatic go, but avoid defer performance hit
 }
 
@@ -101,11 +101,11 @@ func NewShardCache() *ShardCache {
 }
 
 func (m *ShardCache) Get(key int) int {
-	val, _ := m.maps[key%10][key%MaxMapSize]
+	val, _ := m.maps[key%10][key&Mask]
 	return val
 }
 func (m *ShardCache) Put(key int, value int) {
-	m.maps[key%10][key%MaxMapSize] = value
+	m.maps[key%10][key&Mask] = value
 }
 
 type UnsharedCache map[int]int
@@ -116,11 +116,11 @@ func NewUnsharedCache() *UnsharedCache {
 }
 
 func (m *UnsharedCache) Get(key int) int {
-	val := (*m)[key%MaxMapSize]
+	val := (*m)[key&Mask]
 	return val
 }
 func (m *UnsharedCache) Put(key int, value int) {
-	(*m)[key%MaxMapSize] = value
+	(*m)[key&Mask] = value
 }
 
 type SyncCache struct {
@@ -133,14 +133,14 @@ func NewSyncCache() *SyncCache {
 }
 
 func (m *SyncCache) Get(key int) int {
-	val, _ := m.m.Load(key % MaxMapSize)
+	val, _ := m.m.Load(key & Mask)
 	if val == nil {
 		return 0
 	}
 	return val.(int)
 }
 func (m *SyncCache) Put(key int, value int) {
-	m.m.Store(key%MaxMapSize, value)
+	m.m.Store(key&Mask, value)
 }
 
 type PutRequest struct {
@@ -172,13 +172,13 @@ func NewChannelCache() *ChannelCache {
 			request := <-c.request
 			switch request.(type) {
 			case GetRequest:
-				val, ok := c.m[request.(GetRequest).key%MaxMapSize]
+				val, ok := c.m[request.(GetRequest).key&Mask]
 				if !ok {
 					val = 0
 				}
 				c.response <- val
 			case PutRequest:
-				c.m[request.(PutRequest).key%MaxMapSize] = request.(PutRequest).value
+				c.m[request.(PutRequest).key&Mask] = request.(PutRequest).value
 			}
 		}
 	}()

@@ -9,6 +9,7 @@ import (
 )
 
 const NGOS = 2 // number of concurrent go routines for read/load tests
+const Mask = (1024 * 1024) - 1
 
 var um = go_concurrency.NewUnsharedCache()
 var lm = go_concurrency.NewLockCache()
@@ -37,7 +38,7 @@ func BenchmarkRand(m *testing.B) {
 }
 func BenchmarkMain(m *testing.B) {
 	fmt.Println("populating maps...")
-	for i := 0; i < 1000000; i++ {
+	for i := 0; i <= Mask; i++ {
 		um.Put(i, i)
 		lm.Put(i, i)
 		sm.Put(i, i)

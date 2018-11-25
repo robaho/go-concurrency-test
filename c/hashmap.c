@@ -77,6 +77,7 @@ uint32_t myrand(uint32_t r)
 int Sink;
 
 void test(char *name,struct table *t) {
+    int mask = (1024*1024)-1;
     struct timeval start, end;
     for(int i=0;i<1000000;i++){
         insert(t,i,i);
@@ -85,7 +86,7 @@ void test(char *name,struct table *t) {
     uint32_t r = start.tv_usec;
     for( int i=0;i<5000000;i++){
         r = myrand(r);
-        int index = r % 1000000;
+        int index = r & mask;
         insert(t,index,index);
     }
     gettimeofday(&end, NULL);
@@ -95,7 +96,7 @@ void test(char *name,struct table *t) {
     int count=0;
     for( int i=0;i<5000000;i++){
         r = myrand(r);
-        int index = r % 1000000;
+        int index = r & mask;
         count += lookup(t,index);
     }
     Sink=count;
