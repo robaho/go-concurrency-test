@@ -5,6 +5,8 @@ avoid any collisions, 'intmap' has 4x collisions.
 
 I added 'C' versions of the 'intmap' for comparison. I also added a 'lock map' in Java similar to Go.
 
+I increased the number of elements to 1000000 to avoid the cache fitting in the L2.
+
 In all cases, the maps are pre-allocated to avoid any allocation overhead.
 
 The major change across the board was to use random get/put indexes as the linear read/put was biased towards Java, since the Go uses
