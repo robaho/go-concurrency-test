@@ -2,6 +2,7 @@ package go_concurrency
 
 import (
 	"sync"
+	"sync/atomic"
 )
 
 func nextPowerOf2(v int) int {
@@ -102,6 +103,41 @@ func (m *ShardCache) Get(key int) int {
 }
 func (m *ShardCache) Put(key int, value int) {
 	m.maps[key%10][key] = value
+}
+
+const SharedShardMask = 16 - 1
+
+type SharedShardCache struct {
+	maps  [16]atomic.Value
+	locks [16]sync.Mutex
+}
+
+func NewSharedShardCache() *SharedShardCache {
+	m := SharedShardCache{}
+	for i := 0; i < 16; i++ {
+		m.maps[i].Store(make(map[int]int))
+	}
+	return &m
+}
+
+func (m *SharedShardCache) Get(key int) int {
+	m0 := m.maps[key&SharedShardMask]
+	return m0.Load().(map[int]int)[key]
+}
+
+func (m *SharedShardCache) Put(key int, value int) {
+	lock := m.locks[key&SharedShardMask]
+	lock.Lock()
+	m0 := m.maps[key&SharedShardMask].Load().(map[int]int)
+	// make a new map and atomically store, this could be optimized because if
+	// the key already exists in the map, we can safely update the value in the
+	// main map and just restore to enforce the memory fence
+	m1 := make(map[int]int)
+	for k, v := range m0 {
+		m1[k] = v
+	}
+	m1[key] = value
+	m.maps[key&SharedShardMask].Store(m1)
 }
 
 type UnsharedCache map[int]int

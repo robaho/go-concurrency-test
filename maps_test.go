@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-const NGOS = 2 // number of concurrent go routines for read/load tests
+const NGOS = 8 // number of concurrent go routines for read/load tests
 const Mask = (1024 * 1024) - 1
 
 var um = go_concurrency.NewUnsharedCache()
@@ -17,6 +17,7 @@ var lm = go_concurrency.NewLockCache()
 var sm = go_concurrency.NewSyncCache()
 var cm = go_concurrency.NewChannelCache()
 var sc = go_concurrency.NewShardCache()
+var ssc = go_concurrency.NewSharedShardCache()
 var im = go_concurrency.NewIntMap(256000)   // so there are 4x collisions
 var im2 = go_concurrency.NewIntMap(1000000) // so there are no collisions
 
@@ -80,8 +81,8 @@ func BenchmarkMain(m *testing.B) {
 	m.ResetTimer()
 
 	impls := []go_concurrency.Cache{um, lm, sm, cm, sc, im, im2}
-	names := []string{"unshared", "lock", "sync", "channel", "shard", "intmap", "intmap2"}
-	multi := []bool{false, true, true, true, false, true, true}
+	names := []string{"unshared", "lock", "sync", "channel", "shard", "shareshard", "intmap", "intmap2"}
+	multi := []bool{false, true, true, true, false, true, true, true}
 
 	for i := 0; i < len(impls); i++ {
 		impl := impls[i]
