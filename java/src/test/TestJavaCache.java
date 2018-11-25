@@ -226,13 +226,7 @@ public class TestJavaCache {
         CountDownLatch latch = new CountDownLatch(2);
 
         Runnable run = () -> {
-            int r = (int)System.nanoTime();
-            int sum=0;
-            for(int i=0;i<1000000;i++) {
-                r = rand(r);
-                sum+=m.get(r);
-            }
-            Sink = sum;
+            Test0Get();
             latch.countDown();
         };
         e.execute(run);
@@ -246,11 +240,7 @@ public class TestJavaCache {
         CountDownLatch latch = new CountDownLatch(2);
 
         Runnable run = () -> {
-            int r = (int)System.nanoTime();
-            for(int i=0;i<1000000;i++) {
-                r = rand(r);
-                m.put(r,r);
-            }
+            Test2Put();
             latch.countDown();
         };
         e.execute(run);
@@ -264,15 +254,7 @@ public class TestJavaCache {
         CountDownLatch latch = new CountDownLatch(2);
 
         Runnable run = () -> {
-            int r = (int)System.nanoTime();
-            int sum = 0;
-            for(int i=0;i<1000000;i++) {
-                r = rand(r);
-                m.put(r,r);
-                r = rand(r);
-                sum += m.get(r);
-            }
-            Sink = sum;
+            Test3PutGet();
             latch.countDown();
         };
         e.execute(run);

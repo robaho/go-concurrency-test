@@ -36,6 +36,35 @@ func BenchmarkRand(m *testing.B) {
 	}
 	Sink = r
 }
+
+func testget(impl go_concurrency.Cache, b *testing.B) {
+	r := time.Now().Nanosecond()
+
+	var sum int
+	for i := 0; i < b.N; i++ {
+		r = rand(r)
+		sum += impl.Get(r)
+	}
+	Sink = sum
+}
+func testput(impl go_concurrency.Cache, b *testing.B) {
+	r := time.Now().Nanosecond()
+	for i := 0; i < b.N; i++ {
+		r = rand(r)
+		impl.Put(r, r)
+	}
+}
+func testputget(impl go_concurrency.Cache, b *testing.B) {
+	r := time.Now().Nanosecond()
+	var sum int
+	for i := 0; i < b.N; i++ {
+		r = rand(r)
+		impl.Put(r, r)
+		r = rand(r)
+		sum += impl.Get(r)
+	}
+	Sink = sum
+}
 func BenchmarkMain(m *testing.B) {
 	fmt.Println("populating maps...")
 	for i := 0; i <= Mask; i++ {
@@ -56,45 +85,20 @@ func BenchmarkMain(m *testing.B) {
 	for i := 0; i < len(impls); i++ {
 		impl := impls[i]
 		m.Run(names[i]+".get", func(b *testing.B) {
-			r := time.Now().Nanosecond()
-
-			var sum int
-			for i := 0; i < b.N; i++ {
-				r = rand(r)
-				sum += impl.Get(r)
-			}
-			Sink = sum
+			testget(impl, b)
 		})
 		m.Run(names[i]+".put", func(b *testing.B) {
-			r := time.Now().Nanosecond()
-			for i := 0; i < b.N; i++ {
-				r = rand(r)
-				impl.Put(r, r)
-			}
+			testput(impl, b)
 		})
 		m.Run(names[i]+".putget", func(b *testing.B) {
-			r := time.Now().Nanosecond()
-			var sum int
-			for i := 0; i < b.N; i++ {
-				r = rand(r)
-				impl.Put(r, r)
-				r = rand(r)
-				sum += impl.Get(r)
-			}
-			Sink = sum
+			testputget(impl, b)
 		})
 		m.Run(names[i]+".multiget", func(b *testing.B) {
 			wg := sync.WaitGroup{}
 			for g := 0; g < NGOS; g++ {
 				wg.Add(1)
 				go func() {
-					r := time.Now().Nanosecond()
-					var sum int
-					for i := 0; i < b.N; i++ {
-						r = rand(r)
-						sum += impl.Get(r)
-					}
-					Sink = sum
+					testget(impl, b)
 					wg.Done()
 				}()
 			}
@@ -108,12 +112,7 @@ func BenchmarkMain(m *testing.B) {
 			for g := 0; g < NGOS; g++ {
 				wg.Add(1)
 				go func() {
-					r := time.Now().Nanosecond()
-
-					for i := 0; i < b.N; i++ {
-						r = rand(r)
-						impl.Put(r, r)
-					}
+					testput(impl, b)
 					wg.Done()
 				}()
 			}
@@ -124,16 +123,7 @@ func BenchmarkMain(m *testing.B) {
 			for g := 0; g < NGOS; g++ {
 				wg.Add(1)
 				go func() {
-					r := time.Now().Nanosecond()
-
-					var sum int
-					for i := 0; i < b.N; i++ {
-						r = rand(r)
-						sum += impl.Get(r)
-						r = rand(r)
-						impl.Put(r, r)
-					}
-					Sink = sum
+					testputget(impl, b)
 					wg.Done()
 				}()
 			}
