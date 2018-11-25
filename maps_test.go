@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/robaho/go-concurrency-test"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -19,7 +20,7 @@ var sc = go_concurrency.NewShardCache()
 var im = go_concurrency.NewIntMap(256000)   // so there are 4x collisions
 var im2 = go_concurrency.NewIntMap(1000000) // so there are no collisions
 
-var Sink int
+var Sink atomic.Value
 
 func rand(r int) int {
 	/* Algorithm "xor" from p. 4 of Marsaglia, "Xorshift RNGs" */
@@ -34,7 +35,7 @@ func BenchmarkRand(m *testing.B) {
 	for i := 0; i < m.N; i++ {
 		r = rand(r)
 	}
-	Sink = r
+	Sink.Store(r)
 }
 
 func testget(impl go_concurrency.Cache, b *testing.B) {
@@ -45,7 +46,7 @@ func testget(impl go_concurrency.Cache, b *testing.B) {
 		r = rand(r)
 		sum += impl.Get(r & Mask)
 	}
-	Sink = sum
+	Sink.Store(sum)
 }
 func testput(impl go_concurrency.Cache, b *testing.B) {
 	r := time.Now().Nanosecond()
@@ -63,7 +64,7 @@ func testputget(impl go_concurrency.Cache, b *testing.B) {
 		r = rand(r)
 		sum += impl.Get(r & Mask)
 	}
-	Sink = sum
+	Sink.Store(sum)
 }
 func BenchmarkMain(m *testing.B) {
 	fmt.Println("populating maps...")
