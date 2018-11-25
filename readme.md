@@ -211,16 +211,16 @@ pre-populated and don't resize.
 
 ```
 With -O0
-intmap put = 232.725000 ns/op
-intmap get = 130.706600 ns/op
-intmap2 put = 138.142400 ns/op
-intmap2 get = 76.230400 ns/op
+intmap put = 170.209400 ns/op
+intmap get = 128.636200 ns/op
+intmap2 put = 96.674400 ns/op
+intmap2 get = 80.719800 ns/op
 
 With -O2
-intmap put = 199.302600 ns/op
-intmap get = 66.356200 ns/op
-intmap2 put = 121.198600 ns/op
-intmap2 get = 32.384000 ns/op
+intmap put = 150.532800 ns/op
+intmap get = 69.371800 ns/op
+intmap2 put = 106.143400 ns/op
+intmap2 get = 32.520000 ns/op
 ```
 
 **Overall Findings**

@@ -28,7 +28,6 @@ int hashCode(struct table *t,int key){
 void insert(struct table *t,int key,int val){
     int pos = hashCode(t,key);
     struct node *list = t->list[pos];
-    struct node *newNode = (struct node*)malloc(sizeof(struct node));
     struct node *temp = list;
     while(temp){
         if(temp->key==key){
@@ -37,6 +36,7 @@ void insert(struct table *t,int key,int val){
         }
         temp = temp->next;
     }
+    struct node *newNode = (struct node*)malloc(sizeof(struct node));
     newNode->key = key;
     newNode->val = val;
     newNode->next = list;
