@@ -2,6 +2,7 @@ package go_concurrency
 
 import (
 	"sync"
+	"sync/atomic"
 )
 
 func nextPowerOf2(v int) int {
@@ -55,6 +56,52 @@ func (m *IntMap) Put(key int, value int) {
 	}
 	n := &node{key: key, value: value, next: head}
 	m.table[key&m.mask] = n
+}
+
+type SharedIntMap struct {
+	table []atomic.Value
+	locks []sync.Mutex
+	mask  int
+}
+
+func NewSharedIntMap(size int) *SharedIntMap {
+	size = nextPowerOf2(size)
+	m := SharedIntMap{}
+	m.table = make([]atomic.Value, size)
+	m.locks = make([]sync.Mutex, size/16)
+	m.mask = size - 1
+	return &m
+}
+
+func (m *SharedIntMap) Get(key int) int {
+	node, ok := m.table[key&m.mask].Load().(*node)
+	if !ok {
+		return 0
+	}
+	for ; node != nil; node = node.next {
+		if node.key == key {
+			return node.value
+		}
+	}
+	return 0
+}
+func (m *SharedIntMap) Put(key int, value int) {
+	lock := &m.locks[key&m.mask/16]
+	lock.Lock()
+	head, ok := m.table[key&m.mask].Load().(*node)
+	if ok {
+		for node := head; node != nil; node = node.next {
+			if node.key == key {
+				node.value = value
+				m.table[key&m.mask].Store(head)
+				lock.Unlock()
+				return
+			}
+		}
+	}
+	n := &node{key: key, value: value, next: head}
+	m.table[key&m.mask].Store(n)
+	lock.Unlock()
 }
 
 type Cache interface {

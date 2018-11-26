@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-const NGOS = 2 // number of concurrent go routines for read/load tests
+const NGOS = 8 // number of concurrent go routines for read/load tests
 const Mask = (1024 * 1024) - 1
 
 var um = go_concurrency.NewUnsharedCache()
@@ -18,8 +18,9 @@ var sm = go_concurrency.NewSyncCache()
 var cm = go_concurrency.NewChannelCache()
 var sc = go_concurrency.NewShardCache()
 var ssc = go_concurrency.NewSharedShardCache()
-var im = go_concurrency.NewIntMap(256000)   // so there are 4x collisions
-var im2 = go_concurrency.NewIntMap(1000000) // so there are no collisions
+var im = go_concurrency.NewIntMap(256000)         // so there are 4x collisions
+var im2 = go_concurrency.NewIntMap(1000000)       // so there are no collisions
+var sim = go_concurrency.NewSharedIntMap(1000000) // so there are no collisions
 
 var Sink atomic.Value
 
@@ -78,14 +79,15 @@ func BenchmarkMain(m *testing.B) {
 		ssc.Put(i, i)
 		im.Put(i, i)
 		im2.Put(i, i)
+		sim.Put(i, i)
 	}
 
 	sm.Get(100)
 	m.ResetTimer()
 
-	impls := []go_concurrency.Cache{um, lm, sm, cm, sc, ssc, im, im2}
-	names := []string{"unshared", "lock", "sync", "channel", "shard", "shareshard", "intmap", "intmap2"}
-	multi := []bool{false, true, true, true, false, true, true, true}
+	impls := []go_concurrency.Cache{um, lm, sm, cm, sc, ssc, im, im2, sim}
+	names := []string{"unshared", "lock", "sync", "channel", "shard", "shareshard", "intmap", "intmap2", "sharedint"}
+	multi := []bool{false, true, true, true, false, true, true, true, true}
 
 	for i := 0; i < len(impls); i++ {
 		impl := impls[i]
