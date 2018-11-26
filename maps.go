@@ -3,6 +3,7 @@ package go_concurrency
 import (
 	"sync"
 	"sync/atomic"
+	"unsafe"
 )
 
 func nextPowerOf2(v int) int {
@@ -59,25 +60,22 @@ func (m *IntMap) Put(key int, value int) {
 }
 
 type SharedIntMap struct {
-	table []atomic.Value
-	locks []sync.Mutex
+	table []*node
 	mask  int
 }
 
 func NewSharedIntMap(size int) *SharedIntMap {
 	size = nextPowerOf2(size)
 	m := SharedIntMap{}
-	m.table = make([]atomic.Value, size)
-	m.locks = make([]sync.Mutex, size/16)
+	m.table = make([]*node, size)
 	m.mask = size - 1
 	return &m
 }
 
 func (m *SharedIntMap) Get(key int) int {
-	node, ok := m.table[key&m.mask].Load().(*node)
-	if !ok {
-		return 0
-	}
+	p := (*unsafe.Pointer)(unsafe.Pointer(&m.table[key&m.mask]))
+	node := (*node)(atomic.LoadPointer(p))
+
 	for ; node != nil; node = node.next {
 		if node.key == key {
 			return node.value
@@ -86,22 +84,25 @@ func (m *SharedIntMap) Get(key int) int {
 	return 0
 }
 func (m *SharedIntMap) Put(key int, value int) {
-	lock := &m.locks[key&m.mask/16]
-	lock.Lock()
-	head, ok := m.table[key&m.mask].Load().(*node)
-	if ok {
+
+	p := (*unsafe.Pointer)(unsafe.Pointer(&m.table[key&m.mask]))
+
+	for {
+		head := (*node)(atomic.LoadPointer(p))
 		for node := head; node != nil; node = node.next {
 			if node.key == key {
 				node.value = value
-				m.table[key&m.mask].Store(head)
-				lock.Unlock()
+				//if !atomic.CompareAndSwapPointer(p,head,head) {
+				//	continue
+				//}
 				return
 			}
 		}
+		n := &node{key: key, value: value, next: head}
+		if atomic.CompareAndSwapPointer(p, unsafe.Pointer(head), unsafe.Pointer(n)) {
+			continue
+		}
 	}
-	n := &node{key: key, value: value, next: head}
-	m.table[key&m.mask].Store(n)
-	lock.Unlock()
 }
 
 type Cache interface {

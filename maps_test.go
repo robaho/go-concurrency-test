@@ -89,6 +89,10 @@ func BenchmarkMain(m *testing.B) {
 	names := []string{"unshared", "lock", "sync", "channel", "shard", "shareshard", "intmap", "intmap2", "sharedint"}
 	multi := []bool{false, true, true, true, false, true, true, true, true}
 
+	//impls := []go_concurrency.Cache{sim}
+	//names := []string{"sharedint"}
+	//multi := []bool{true}
+
 	for i := 0; i < len(impls); i++ {
 		impl := impls[i]
 		m.Run(names[i]+".get", func(b *testing.B) {
