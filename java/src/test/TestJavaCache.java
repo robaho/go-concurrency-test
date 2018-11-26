@@ -135,6 +135,7 @@ class IntMap implements AnyCache {
 
 public class TestJavaCache {
     final int Mask = (1024*1024)-1;
+    final int NTHREADS = 2;
 
     static int rand(int r) {
         /* Algorithm "xor" from p. 4 of Marsaglia, "Xorshift RNGs" */
@@ -168,7 +169,7 @@ public class TestJavaCache {
                 m = new IntMap(1000000); break;
         }
 
-        e = Executors.newFixedThreadPool(2);
+        e = Executors.newFixedThreadPool(NTHREADS);
         for(int i=0;i<=Mask;i++){
             m.put(i,i);
         }
@@ -222,42 +223,45 @@ public class TestJavaCache {
     @Benchmark
     @OperationsPerInvocation(1000000)
     public void Test4MultiGet() throws InterruptedException {
-        CountDownLatch latch = new CountDownLatch(2);
+        CountDownLatch latch = new CountDownLatch(NTHREADS);
 
         Runnable run = () -> {
             Test0Get();
             latch.countDown();
         };
-        e.execute(run);
-        e.execute(run);
+        for(int i=0;i<NTHREADS;i++){
+            e.execute(run);
+        }
         latch.await();
     }
 
     @Benchmark
     @OperationsPerInvocation(1000000)
     public void Test5MultiPut() throws InterruptedException {
-        CountDownLatch latch = new CountDownLatch(2);
+        CountDownLatch latch = new CountDownLatch(NTHREADS);
 
         Runnable run = () -> {
             Test2Put();
             latch.countDown();
         };
-        e.execute(run);
-        e.execute(run);
+        for(int i=0;i<NTHREADS;i++){
+            e.execute(run);
+        }
         latch.await();
     }
 
     @Benchmark
     @OperationsPerInvocation(1000000)
     public void Test6MultiPutGet() throws InterruptedException {
-        CountDownLatch latch = new CountDownLatch(2);
+        CountDownLatch latch = new CountDownLatch(NTHREADS);
 
         Runnable run = () -> {
             Test3PutGet();
             latch.countDown();
         };
-        e.execute(run);
-        e.execute(run);
+        for(int i=0;i<NTHREADS;i++){
+            e.execute(run);
+        }
         latch.await();
     }
 

@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-const NGOS = 4 // number of concurrent go routines for read/load tests
+const NGOS = 2 // number of concurrent go routines for read/load tests
 const Mask = (1024 * 1024) - 1
 
 var um = go_concurrency.NewUnsharedCache()
@@ -100,9 +100,9 @@ func BenchmarkMain(m *testing.B) {
 	names := []string{"unshared", "lock", "sync", "channel", "shard", "shareshard", "intmap", "intmap2", "sharedint"}
 	multi := []bool{false, true, true, true, false, true, true, true, true}
 
-	//impls := []go_concurrency.Cache{sim}
-	//names := []string{"sharedint"}
-	//multi := []bool{true}
+	//impls := []go_concurrency.Cache{lm,sm}
+	//names := []string{"lock","sync"}
+	//multi := []bool{true,true}
 
 	for i := 0; i < len(impls); i++ {
 		impl := impls[i]
