@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-const NGOS = 8 // number of concurrent go routines for read/load tests
+const NGOS = 4 // number of concurrent go routines for read/load tests
 const Mask = (1024 * 1024) - 1
 
 var um = go_concurrency.NewUnsharedCache()
@@ -30,6 +30,17 @@ func rand(r int) int {
 	r ^= r >> 17
 	r ^= r << 5
 	return r & 0x7fffffff
+}
+
+func TestNewSharedIntMap(t *testing.T) {
+	for i := 0; i < 2000000; i++ {
+		sim.Put(i, i)
+	}
+	for i := 0; i < 2000000; i++ {
+		if sim.Get(i) != i {
+			t.Fatal("wrong value")
+		}
+	}
 }
 
 func BenchmarkRand(m *testing.B) {
