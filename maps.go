@@ -104,27 +104,46 @@ func (m *ShardCache) Put(key int, value int) {
 	m.maps[key%10][key] = value
 }
 
-const SharedShardMask = 16 - 1
+const SharedShardMask = 128 - 1
+
+type imap map[int]int
+
+type shard struct {
+	imap
+	sync.RWMutex
+}
 
 type SharedShardCache struct {
-	maps [16]sync.Map
+	shards [128]*shard
 }
 
 func NewSharedShardCache() *SharedShardCache {
 	m := SharedShardCache{}
+	for i := 0; i < 128; i++ {
+		s := shard{imap: make(imap)}
+		m.shards[i] = &s
+	}
 	return &m
 }
 
 func (m *SharedShardCache) Get(key int) int {
-	val, ok := m.maps[key&SharedShardMask].Load(key)
+	s := m.shards[key&SharedShardMask]
+
+	s.RLock()
+	val, ok := s.imap[key]
+	s.RUnlock()
+
 	if !ok {
 		return 0
 	}
-	return val.(int)
+	return val
 }
 
 func (m *SharedShardCache) Put(key int, value int) {
-	m.maps[key&SharedShardMask].Store(key, value)
+	s := m.shards[key&SharedShardMask]
+	s.Lock()
+	s.imap[key] = value
+	s.Unlock()
 }
 
 type UnsharedCache map[int]int
