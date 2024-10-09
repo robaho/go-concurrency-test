@@ -1,3 +1,7 @@
+**Update 10/09/2024**
+
+With Go generics, it is straighforward to use the techniques listed below to create a highly performant concurrent map implementation.
+
 **Update 11/26/18**
 
 After discussion in Go incident [28938](https://github.com/golang/go/issues/28938) I am prepared to make some final conclusions.
@@ -12,7 +16,7 @@ to accomplish some operations (use of interfaces, no atomic CAS at the table ent
 In my tests I developed a fully concurrent "shared intmap" which shows excellent performance, but for a variety of reasons this is not a general solution,
  but it shows the performance potential of a redesigned sync.Map.
 
-The Go incident above links to several issues #21031, #21035, and #15292 that when resolved 
+The Go incident above links to several issues #[21031](https://github.com/golang/go/issues/54720), #[21035](https://github.com/golang/go/issues/21035) that when resolved 
 should bring sync.Map performance inline with Java's ConcurrentHashMap.
 
 To be fair, most of performance issues with sync.Map only surface with a large map, with a large working set of active keys, as the indirection is
