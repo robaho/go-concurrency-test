@@ -2,6 +2,8 @@
 
 With Go generics, it is straighforward to use the techniques listed below to create a highly performant concurrent map implementation.
 
+Note as well, the timings are out of date and based on a very old Go version. I am in the process of updating them.
+
 **Update 11/26/18**
 
 After discussion in Go incident [28938](https://github.com/golang/go/issues/28938) I am prepared to make some final conclusions.
