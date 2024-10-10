@@ -1,8 +1,8 @@
 **Update 10/09/2024**
 
-With Go generics, it is straighforward to use the techniques listed below to create a highly performant concurrent map implementation.
+With Go generics, it is straightforward to use the techniques listed below to create a highly performant concurrent map implementation.
 
-Note as well, the timings are out of date and based on a very old Go version. I am in the process of updating them.
+I have updated the timings using OpenJDK 21, Go 1.22.5, and clang version 14.0.0 (clang-1400.0.29.202) on an iMac Intel(R) Core(TM) i7-6700K CPU @ 4.00GHz
 
 **Update 11/26/18**
 
@@ -133,56 +133,59 @@ Any GC related activity is included in the tests. No attempt was made to reduce,
 **Go Test Results**
 
 ```
-BenchmarkMain/unshared.get-8         	20000000	        87.7 ns/op
-BenchmarkMain/unshared.put-8         	20000000	        95.2 ns/op
-BenchmarkMain/unshared.putget-8      	10000000	       179 ns/op
-BenchmarkMain/unshared.multiget-8    	20000000	        84.8 ns/op
-BenchmarkMain/lock.get-8             	20000000	       110 ns/op
-BenchmarkMain/lock.put-8             	10000000	       121 ns/op
-BenchmarkMain/lock.putget-8          	10000000	       237 ns/op
-BenchmarkMain/lock.multiget-8        	10000000	       145 ns/op
-BenchmarkMain/lock.multiput-8        	 5000000	       297 ns/op
-BenchmarkMain/lock.multiputget-8     	 3000000	       566 ns/op
-BenchmarkMain/sync.get-8             	 5000000	       289 ns/op
-BenchmarkMain/sync.put-8             	 5000000	       311 ns/op
-BenchmarkMain/sync.putget-8          	 2000000	       694 ns/op
-BenchmarkMain/sync.multiget-8        	 5000000	       377 ns/op
-BenchmarkMain/sync.multiput-8        	 5000000	       348 ns/op
-BenchmarkMain/sync.multiputget-8     	 2000000	       727 ns/op
-BenchmarkMain/channel.get-8          	 2000000	       911 ns/op
-BenchmarkMain/channel.put-8          	 3000000	       537 ns/op
-BenchmarkMain/channel.putget-8       	 1000000	      1467 ns/op
-BenchmarkMain/channel.multiget-8     	 1000000	      1589 ns/op
-BenchmarkMain/channel.multiput-8     	 2000000	       837 ns/op
-BenchmarkMain/channel.multiputget-8  	  500000	      2250 ns/op
-BenchmarkMain/shard.get-8            	20000000	       111 ns/op
-BenchmarkMain/shard.put-8            	20000000	        99.9 ns/op
-BenchmarkMain/shard.putget-8         	10000000	       198 ns/op
-BenchmarkMain/shard.multiget-8       	20000000	       101 ns/op
-BenchmarkMain/shareshard.get-8       	20000000	       114 ns/op
-BenchmarkMain/shareshard.put-8       	10000000	       125 ns/op
-BenchmarkMain/shareshard.putget-8    	 5000000	       248 ns/op
-BenchmarkMain/shareshard.multiget-8  	10000000	       121 ns/op
-BenchmarkMain/shareshard.multiput-8  	10000000	       149 ns/op
-BenchmarkMain/shareshard.multiputget-8         	 5000000	       306 ns/op
-BenchmarkMain/intmap.get-8                     	20000000	       108 ns/op
-BenchmarkMain/intmap.put-8                     	10000000	       217 ns/op
-BenchmarkMain/intmap.putget-8                  	 5000000	       297 ns/op
-BenchmarkMain/intmap.multiget-8                	20000000	       107 ns/op
-BenchmarkMain/intmap.multiput-8                	10000000	       218 ns/op
-BenchmarkMain/intmap.multiputget-8             	 5000000	       312 ns/op
-BenchmarkMain/intmap2.get-8                    	30000000	        54.2 ns/op
-BenchmarkMain/intmap2.put-8                    	10000000	       133 ns/op
-BenchmarkMain/intmap2.putget-8                 	10000000	       200 ns/op
-BenchmarkMain/intmap2.multiget-8               	30000000	        53.4 ns/op
-BenchmarkMain/intmap2.multiput-8               	10000000	       132 ns/op
-BenchmarkMain/intmap2.multiputget-8            	10000000	       202 ns/op
-BenchmarkMain/sharedint.get-8                  	30000000	        55.2 ns/op
-BenchmarkMain/sharedint.put-8                  	10000000	       128 ns/op
-BenchmarkMain/sharedint.putget-8               	10000000	       205 ns/op
-BenchmarkMain/sharedint.multiget-8             	30000000	        55.6 ns/op
-BenchmarkMain/sharedint.multiput-8             	10000000	       129 ns/op
-BenchmarkMain/sharedint.multiputget-8          	10000000	       204 ns/op
+cpu: Intel(R) Core(TM) i7-6700K CPU @ 4.00GHz
+BenchmarkRand-8         669243439                1.781 ns/op
+populating maps...
+BenchmarkMain/unshared.get-8            18877132                63.53 ns/op
+BenchmarkMain/unshared.put-8            17971988                69.09 ns/op
+BenchmarkMain/unshared.putget-8          9268077               131.4 ns/op
+BenchmarkMain/unshared.multiget-8       17787741                66.86 ns/op
+BenchmarkMain/lock.get-8                17399762                70.33 ns/op
+BenchmarkMain/lock.put-8                10549318               114.1 ns/op
+BenchmarkMain/lock.putget-8              6803950               178.8 ns/op
+BenchmarkMain/lock.multiget-8           10305220               116.4 ns/op
+BenchmarkMain/lock.multiput-8            4546767               255.9 ns/op
+BenchmarkMain/lock.multiputget-8         2609588               448.0 ns/op
+BenchmarkMain/sync.get-8                 5393236               216.7 ns/op
+BenchmarkMain/sync.put-8                 3445075               353.9 ns/op
+BenchmarkMain/sync.putget-8              1963018               651.0 ns/op
+BenchmarkMain/sync.multiget-8            3567596               326.3 ns/op
+BenchmarkMain/sync.multiput-8            3339694               377.1 ns/op
+BenchmarkMain/sync.multiputget-8         1865768               676.4 ns/op
+BenchmarkMain/channel.get-8              2028018               614.3 ns/op
+BenchmarkMain/channel.put-8              3150184               384.3 ns/op
+BenchmarkMain/channel.putget-8           1226596               984.5 ns/op
+BenchmarkMain/channel.multiget-8         1000000              1169 ns/op
+BenchmarkMain/channel.multiput-8         1468042               790.1 ns/op
+BenchmarkMain/channel.multiputget-8       641374              1873 ns/op
+BenchmarkMain/shard.get-8               16428013                71.47 ns/op
+BenchmarkMain/shard.put-8               12421777                85.71 ns/op
+BenchmarkMain/shard.putget-8             7720970               152.4 ns/op
+BenchmarkMain/shard.multiget-8          15689773                75.81 ns/op
+BenchmarkMain/shareshard.get-8          16479192                72.35 ns/op
+BenchmarkMain/shareshard.put-8           9910390               110.3 ns/op
+BenchmarkMain/shareshard.putget-8        6203272               183.1 ns/op
+BenchmarkMain/shareshard.multiget-8     14384760                83.03 ns/op
+BenchmarkMain/shareshard.multiput-8      8925080               133.5 ns/op
+BenchmarkMain/shareshard.multiputget-8           4910743               248.7 ns/op
+BenchmarkMain/intmap.get-8                      14669283                83.42 ns/op
+BenchmarkMain/intmap.put-8                       6084549               191.5 ns/op
+BenchmarkMain/intmap.putget-8                    4504140               250.0 ns/op
+BenchmarkMain/intmap.multiget-8                 12845756                88.15 ns/op
+BenchmarkMain/intmap.multiput-8                  5912864               190.2 ns/op
+BenchmarkMain/intmap.multiputget-8               4621642               255.4 ns/op
+BenchmarkMain/intmap2.get-8                     30600810                38.98 ns/op
+BenchmarkMain/intmap2.put-8                      8988387               125.8 ns/op
+BenchmarkMain/intmap2.putget-8                   5373553               210.6 ns/op
+BenchmarkMain/intmap2.multiget-8                27520656                41.71 ns/op
+BenchmarkMain/intmap2.multiput-8                 9286503               128.7 ns/op
+BenchmarkMain/intmap2.multiputget-8              5525810               211.8 ns/op
+BenchmarkMain/sharedint.get-8                   20388027                58.56 ns/op
+BenchmarkMain/sharedint.put-8                    5578724               210.7 ns/op
+BenchmarkMain/sharedint.putget-8                 3231453               365.0 ns/op
+BenchmarkMain/sharedint.multiget-8              17616985                65.32 ns/op
+BenchmarkMain/sharedint.multiput-8               5640673               207.1 ns/op
+BenchmarkMain/sharedint.multiputget-8            3212062               364.5 ns/op
 ```
 
 **Go Analysis**
@@ -198,40 +201,40 @@ probably necessitate using pointers.
 **Java Test Results**
 
 ```
-using 1 fork, 1 warm-up iteration, and 5 iterations of 1 sec
+using 1 fork, 1 warm-up iteration, and 5 iterations of 3 sec
 
-Java8
 Benchmark                            (arg)  Mode  Cnt     Score     Error  Units
-TestJavaCache.Test0Get            unshared  avgt    5    88.230 ±   2.349  ns/op
-TestJavaCache.Test0Get          concurrent  avgt    5    71.366 ±   1.083  ns/op
-TestJavaCache.Test0Get                lock  avgt    5   177.312 ±   4.786  ns/op
-TestJavaCache.Test0Get              intmap  avgt    5    64.419 ±   2.022  ns/op
-TestJavaCache.Test0Get             intmap2  avgt    5    26.161 ±   0.743  ns/op
-TestJavaCache.Test2Put            unshared  avgt    5   124.180 ±   5.136  ns/op
-TestJavaCache.Test2Put          concurrent  avgt    5   168.349 ±   9.212  ns/op
-TestJavaCache.Test2Put                lock  avgt    5   165.554 ±   8.201  ns/op
-TestJavaCache.Test2Put              intmap  avgt    5   147.597 ±   9.172  ns/op
-TestJavaCache.Test2Put             intmap2  avgt    5    99.375 ±  18.932  ns/op
-TestJavaCache.Test3PutGet         unshared  avgt    5   253.732 ±  23.680  ns/op
-TestJavaCache.Test3PutGet       concurrent  avgt    5   303.059 ±  13.040  ns/op
-TestJavaCache.Test3PutGet             lock  avgt    5   416.668 ±  14.430  ns/op
-TestJavaCache.Test3PutGet           intmap  avgt    5   206.146 ±  11.350  ns/op
-TestJavaCache.Test3PutGet          intmap2  avgt    5   152.343 ±   2.968  ns/op
-TestJavaCache.Test4MultiGet       unshared  avgt    5    91.644 ±   5.167  ns/op
-TestJavaCache.Test4MultiGet     concurrent  avgt    5    75.616 ±   2.994  ns/op
-TestJavaCache.Test4MultiGet           lock  avgt    5   326.613 ±  12.346  ns/op
-TestJavaCache.Test4MultiGet         intmap  avgt    5    67.214 ±   1.764  ns/op
-TestJavaCache.Test4MultiGet        intmap2  avgt    5    28.026 ±   1.060  ns/op
-TestJavaCache.Test5MultiPut       unshared  avgt    5   140.423 ±   4.668  ns/op
-TestJavaCache.Test5MultiPut     concurrent  avgt    5   182.213 ±   8.793  ns/op
-TestJavaCache.Test5MultiPut           lock  avgt    5   806.472 ± 133.764  ns/op
-TestJavaCache.Test5MultiPut         intmap  avgt    5   152.127 ±  11.652  ns/op
-TestJavaCache.Test5MultiPut        intmap2  avgt    5    98.500 ±  20.317  ns/op
-TestJavaCache.Test6MultiPutGet    unshared  avgt    5   279.418 ±  38.713  ns/op
-TestJavaCache.Test6MultiPutGet  concurrent  avgt    5   308.929 ±   9.730  ns/op
-TestJavaCache.Test6MultiPutGet        lock  avgt    5  3375.689 ± 258.176  ns/op
-TestJavaCache.Test6MultiPutGet      intmap  avgt    5   222.229 ±  22.539  ns/op
-TestJavaCache.Test6MultiPutGet     intmap2  avgt    5   156.335 ±   3.430  ns/op
+TestJavaCache.Test0Get            unshared  avgt    5    50.360 ±   5.020  ns/op
+TestJavaCache.Test0Get          concurrent  avgt    5    48.672 ±   1.108  ns/op
+TestJavaCache.Test0Get                lock  avgt    5    99.454 ±  13.884  ns/op
+TestJavaCache.Test0Get              intmap  avgt    5    48.244 ±   8.969  ns/op
+TestJavaCache.Test0Get             intmap2  avgt    5    18.599 ±   0.447  ns/op
+TestJavaCache.Test2Put            unshared  avgt    5   109.816 ±  38.564  ns/op
+TestJavaCache.Test2Put          concurrent  avgt    5   174.497 ±  47.735  ns/op
+TestJavaCache.Test2Put                lock  avgt    5   174.281 ±  31.701  ns/op
+TestJavaCache.Test2Put              intmap  avgt    5   105.264 ±   6.934  ns/op
+TestJavaCache.Test2Put             intmap2  avgt    5    78.434 ±   1.202  ns/op
+TestJavaCache.Test3PutGet         unshared  avgt    5   247.885 ±  55.511  ns/op
+TestJavaCache.Test3PutGet       concurrent  avgt    5   282.537 ±  22.152  ns/op
+TestJavaCache.Test3PutGet             lock  avgt    5   298.475 ±  29.188  ns/op
+TestJavaCache.Test3PutGet           intmap  avgt    5   149.688 ±   3.338  ns/op
+TestJavaCache.Test3PutGet          intmap2  avgt    5   119.706 ±   1.820  ns/op
+TestJavaCache.Test4MultiGet       unshared  avgt    5    53.801 ±   0.663  ns/op
+TestJavaCache.Test4MultiGet     concurrent  avgt    5    53.011 ±   1.252  ns/op
+TestJavaCache.Test4MultiGet           lock  avgt    5   329.347 ±   2.941  ns/op
+TestJavaCache.Test4MultiGet         intmap  avgt    5    51.659 ±   9.043  ns/op
+TestJavaCache.Test4MultiGet        intmap2  avgt    5    22.869 ±   3.840  ns/op
+TestJavaCache.Test5MultiPut       unshared  avgt    5   108.950 ±  28.201  ns/op
+TestJavaCache.Test5MultiPut     concurrent  avgt    5   159.692 ±  23.058  ns/op
+TestJavaCache.Test5MultiPut           lock  avgt    5   470.977 ±  84.851  ns/op
+TestJavaCache.Test5MultiPut         intmap  avgt    5   104.542 ±   1.934  ns/op
+TestJavaCache.Test5MultiPut        intmap2  avgt    5    78.117 ±   3.363  ns/op
+TestJavaCache.Test6MultiPutGet    unshared  avgt    5   240.432 ±  59.746  ns/op
+TestJavaCache.Test6MultiPutGet  concurrent  avgt    5   285.872 ±  38.001  ns/op
+TestJavaCache.Test6MultiPutGet        lock  avgt    5  1678.923 ± 288.992  ns/op
+TestJavaCache.Test6MultiPutGet      intmap  avgt    5   151.847 ±   5.489  ns/op
+TestJavaCache.Test6MultiPutGet     intmap2  avgt    5   122.743 ±   3.129  ns/op
+
 ```
 *** The Java multi-unshared and intmap are not valid, but no easy way to exclude with jmh. It doesn't crash because the maps are
 pre-populated and don't resize.
@@ -248,16 +251,16 @@ pre-populated and don't resize.
 
 ```
 With -O0
-intmap put = 170.209400 ns/op
-intmap get = 128.636200 ns/op
-intmap2 put = 96.674400 ns/op
-intmap2 get = 80.719800 ns/op
+intmap put = 170.991800 ns/op
+intmap get = 134.725800 ns/op
+intmap2 put = 108.658200 ns/op
+intmap2 get = 79.461800 ns/op
 
-With -O2
-intmap put = 150.532800 ns/op
-intmap get = 69.371800 ns/op
-intmap2 put = 106.143400 ns/op
-intmap2 get = 32.520000 ns/op
+With -O3
+intmap put = 116.890400 ns/op
+intmap get = 56.260000 ns/op
+intmap2 put = 94.516000 ns/op
+intmap2 get = 25.283200 ns/op
 ```
 
 **Overall Findings**

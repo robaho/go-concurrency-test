@@ -128,7 +128,7 @@ class IntMap implements AnyCache {
 
 @State(Scope.Benchmark)
 @Fork(1)
-@Warmup(iterations = 1)
+@Warmup(iterations = 1, time = 3)
 @Measurement(iterations = 5, time = 3)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)

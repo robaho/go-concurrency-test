@@ -4,7 +4,7 @@ CC = gcc
 # compiler flags:
 #  -g    adds debugging information to the executable file
 #  -Wall turns on most, but not all, compiler warnings
-CFLAGS  = -g -Wall -O2
+CFLAGS  = -g -Wall -O3
 
 # the build target executable:
 TARGET = hashmap
