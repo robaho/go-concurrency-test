@@ -1,6 +1,6 @@
 **Update 10/09/2024**
 
-With Go generics, it is straightforward to use the techniques listed below to create a highly performant concurrent map implementation.
+With Go generics, it is straightforward (should be, uncertain about hash function) to use the techniques listed below to create a highly performant concurrent map implementation.
 
 I have updated the timings using OpenJDK 21, Go 1.22.5, and clang version 14.0.0 (clang-1400.0.29.202) on an iMac Intel(R) Core(TM) i7-6700K CPU @ 4.00GHz
 
