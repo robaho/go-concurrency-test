@@ -1,10 +1,12 @@
-**Update 10/09/2024**
+<details>
+ <summary>**Update 10/09/2024**</summary>
 
 With Go generics, it is straightforward (should be, uncertain about hash function) to use the techniques listed below to create a highly performant concurrent map implementation.
 
 I have updated the timings using OpenJDK 21, Go 1.22.5, and clang version 14.0.0 (clang-1400.0.29.202) on an iMac Intel(R) Core(TM) i7-6700K CPU @ 4.00GHz
-
-**Update 11/26/18**
+</details>
+<details>
+ <summary>**Update 11/26/18**</summary>
 
 After discussion in Go incident [28938](https://github.com/golang/go/issues/28938) I am prepared to make some final conclusions.
 
@@ -23,8 +25,9 @@ should bring sync.Map performance inline with Java's ConcurrentHashMap.
 
 To be fair, most of performance issues with sync.Map only surface with a large map, with a large working set of active keys, as the indirection is
 especially painful due to cpu cache misses. 
-
-**Update 11/24/18**
+</details>
+<details>
+ <summary>**Update 11/24/18**</summary>
 
 I added 'intmap' versions - which are fixed sized maps (without resizing). The 'intmap2' is sized to
 avoid any collisions, 'intmap' has 4x collisions.
@@ -48,8 +51,9 @@ the reason the Go map implementation uses arrays of structs rather than a linked
 *** A note about the multi timings... They are not divided by the number of Go routines/threads (which doubles the number of operations), but since there
 are only 2 and ample cores available- meaning they should execute concurrently, it measures the overhead more directly since the timings
  can be directly compared to the single routine/thread case. 
-
-**Update**
+</details>
+<details>
+<summary>**Update**</summary>
 
 Based on feedback from Bryan Mills, I've updated the implementation using channels, and re-tested. I do not believe it has
 made a significant difference. It does highlight that the 'Get' is worse than the 'Put' because 2 channels are involved.
@@ -73,6 +77,7 @@ I determined that the PutGet not matching the Put + Get times was because of cac
 opposite sides, which corrected the problem, and so I removed the comment regarding potential 'go bench' accuracy issues.
 
 I added an 'unshared' cache to the Java tests for an additional baseline. 
+</details>
 
 **Summary**
 
