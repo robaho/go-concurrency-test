@@ -1,12 +1,12 @@
 <details>
- <summary>**Update 10/09/2024**</summary>
+ <summary>Update 10/09/2024</summary>
 
 With Go generics, it is straightforward (should be, uncertain about hash function) to use the techniques listed below to create a highly performant concurrent map implementation.
 
 I have updated the timings using OpenJDK 21, Go 1.22.5, and clang version 14.0.0 (clang-1400.0.29.202) on an iMac Intel(R) Core(TM) i7-6700K CPU @ 4.00GHz
 </details>
 <details>
- <summary>**Update 11/26/18**</summary>
+ <summary>Update 11/26/18</summary>
 
 After discussion in Go incident [28938](https://github.com/golang/go/issues/28938) I am prepared to make some final conclusions.
 
@@ -27,7 +27,7 @@ To be fair, most of performance issues with sync.Map only surface with a large m
 especially painful due to cpu cache misses. 
 </details>
 <details>
- <summary>**Update 11/24/18**</summary>
+ <summary>Update 11/24/18</summary>
 
 I added 'intmap' versions - which are fixed sized maps (without resizing). The 'intmap2' is sized to
 avoid any collisions, 'intmap' has 4x collisions.
@@ -53,7 +53,7 @@ are only 2 and ample cores available- meaning they should execute concurrently, 
  can be directly compared to the single routine/thread case. 
 </details>
 <details>
-<summary>**Update**</summary>
+<summary>Update</summary>
 
 Based on feedback from Bryan Mills, I've updated the implementation using channels, and re-tested. I do not believe it has
 made a significant difference. It does highlight that the 'Get' is worse than the 'Put' because 2 channels are involved.
